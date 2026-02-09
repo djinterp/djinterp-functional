@@ -8,13 +8,13 @@
 * combinators with both context and non-context variants.
 *
 *
-* path:      \tests\functional\predicate\predicate_tests_sa.h
-* link:      TBA
+* path:      \tests\functional\predicate_tests_sa.h
+* link(s):   TBA
 * author(s): Samuel 'teer' Neal-Blim                          date: 2026.02.09
 ******************************************************************************/
 
-#ifndef DJINTERP_TESTS_PREDICATE_SA_
-#define DJINTERP_TESTS_PREDICATE_SA_ 1
+#ifndef DJINTERP_TESTS_PREDICATE_STANDALONE_
+#define DJINTERP_TESTS_PREDICATE_STANDALONE_ 1
 
 #include <stddef.h>
 #include <stdint.h>
@@ -55,4 +55,4 @@ bool d_tests_sa_predicate_eval_all(struct d_test_counter* _counter);
 bool d_tests_sa_predicate_run_all(struct d_test_counter* _counter);
 
 
-#endif  // DJINTERP_TESTS_PREDICATE_SA_
+#endif  // DJINTERP_TESTS_PREDICATE_STANDALONE
