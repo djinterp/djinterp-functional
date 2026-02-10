@@ -40,7 +40,7 @@
                                 func1,                          \
                                 func2,                          \
                                 type)                           \
-    D_FUNCTIONAL_INLINE bool                                    \
+    D_INLINE bool                                               \
     func_name                                                   \
     (                                                           \
         const void* _input,                                     \
@@ -57,7 +57,7 @@
         }                                                       \
                                                                 \
         return (func2)(&temp, _output, NULL);                   \
-    }
+    }                                                           
 
 // D_FUNCTIONAL_MAP_THEN_FILTER
 //   macro: convenient composition of map followed by filter.
@@ -69,7 +69,7 @@
     d_functional_filter(d_functional_map( (data),               \
                                           NULL,                 \
                                           (count),              \
-                                          (SIZE),               \
+                                          (size),               \
                                           (transform),          \
                                           NULL),                \
                          NULL,                                  \
@@ -85,32 +85,37 @@
 //   macro: wraps a user function to make it composable.
 // Usage: D_FUNCTIONAL_MAKE_COMPOSABLE(my_func, int) creates
 // d_my_func_wrapper.
-#define D_FUNCTIONAL_MAKE_COMPOSABLE(func, type)                \
-    D_FUNCTIONAL_INLINE bool                                    \
-    d_##FUNC##_wrapper(const void* _input,                      \
+#define D_FUNCTIONAL_MAKE_COMPOSABLE(func,                      \
+                                     type)                      \
+    D_INLINE bool                                               \
+    d_##func##_wrapper(const void* _input,                      \
                        void*       _output,                     \
                        void*       _context)                    \
     {                                                           \
         (void)_context;                                         \
         *(type*)_output = func(*(const type*)_input);           \
+                                                                \
         return true;                                            \
     }                                                           
                                                                 
 // D_FUNCTIONAL_MAKE_PREDICATE_FROM                             
 //   macro: converts a boolean function to d_predicate.         
-#define D_FUNCTIONAL_MAKE_PREDICATE_FROM(func, type)            \
-    D_FUNCTIONAL_INLINE bool                                    \
-    d_##FUNC##_predicate(const void* _element,                  \
+#define D_FUNCTIONAL_MAKE_PREDICATE_FROM(func,                  \
+                                         type)                  \
+    D_INLINE bool                                               \
+    d_##func##_predicate(const void* _element,                  \
                          void*       _context)                  \
     {                                                           \
         (void)_context;                                         \
+                                                                \
         return func(*(const type*)_element);                    \
     }
 
 // D_FUNCTIONAL_LIFT
 //   macro: lifts a typed function into void* space for composition.
 // This is the generic version that works with any signature.
-#define D_FUNCTIONAL_LIFT(func_name, wrapper_name)              \
+#define D_FUNCTIONAL_LIFT(func_name,                            \
+                          wrapper_name)                         \
     const void* wrapper_name = (const void*)func_name
 
 
