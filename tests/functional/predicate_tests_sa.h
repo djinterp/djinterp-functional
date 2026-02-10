@@ -4,8 +4,8 @@
 *   Unit test declarations for `predicate.h` module.
 *   Provides comprehensive testing of all d_predicate combinator functions
 * including constructor functions (_new variants), evaluation functions (_eval
-* variants), and utility predicates. Tests cover AND, OR, XOR, and NOT
-* combinators with both context and non-context variants.
+* variants), utility predicates, and compound literal macros. Tests cover AND,
+* OR, XOR, and NOT combinators with both context and non-context variants.
 *
 *
 * path:      \tests\functional\predicate_tests_sa.h
@@ -25,33 +25,32 @@
 #include "..\..\inc\functional\predicate.h"
 
 
-/******************************************************************************
- * I. CONSTRUCTOR FUNCTION TESTS
- *****************************************************************************/
+// constructor function tests
 bool d_tests_sa_predicate_and_new(struct d_test_counter* _counter);
 bool d_tests_sa_predicate_or_new(struct d_test_counter* _counter);
 bool d_tests_sa_predicate_xor_new(struct d_test_counter* _counter);
 bool d_tests_sa_predicate_not_new(struct d_test_counter* _counter);
-
-// I.   aggregation function
 bool d_tests_sa_predicate_constructor_all(struct d_test_counter* _counter);
 
-
-/******************************************************************************
- * II. EVALUATION FUNCTION TESTS
- *****************************************************************************/
+// evaulation function tests
 bool d_tests_sa_predicate_and_eval(struct d_test_counter* _counter);
 bool d_tests_sa_predicate_or_eval(struct d_test_counter* _counter);
 bool d_tests_sa_predicate_xor_eval(struct d_test_counter* _counter);
 bool d_tests_sa_predicate_not_eval(struct d_test_counter* _counter);
-
-// II.  aggregation function
 bool d_tests_sa_predicate_eval_all(struct d_test_counter* _counter);
 
+// macro tests
+bool d_tests_sa_predicate_macro_and(struct d_test_counter* _counter);
+bool d_tests_sa_predicate_macro_or(struct d_test_counter* _counter);
+bool d_tests_sa_predicate_macro_xor(struct d_test_counter* _counter);
+bool d_tests_sa_predicate_macro_not(struct d_test_counter* _counter);
+bool d_tests_sa_predicate_macro_and_simple(struct d_test_counter* _counter);
+bool d_tests_sa_predicate_macro_or_simple(struct d_test_counter* _counter);
+bool d_tests_sa_predicate_macro_xor_simple(struct d_test_counter* _counter);
+bool d_tests_sa_predicate_macro_not_simple(struct d_test_counter* _counter);
+bool d_tests_sa_predicate_macro_all(struct d_test_counter* _counter);
 
-/******************************************************************************
- * MODULE-LEVEL AGGREGATION
- *****************************************************************************/
+// module-level aggregation
 bool d_tests_sa_predicate_run_all(struct d_test_counter* _counter);
 
 

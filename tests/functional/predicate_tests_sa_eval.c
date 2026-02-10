@@ -1,103 +1,5 @@
 #include ".\predicate_tests_sa.h"
-
-
-// helper predicate functions for testing
-static bool pred_always_true(const void* _element, void* _context)
-{
-    (void)_element;
-    (void)_context;
-
-    return true;
-}
-
-static bool pred_always_false(const void* _element, void* _context)
-{
-    (void)_element;
-    (void)_context;
-
-    return false;
-}
-
-static bool pred_is_even(const void* _element, void* _context)
-{
-    const int* value;
-
-    (void)_context;
-
-    if (!_element)
-    {
-        return false;
-    }
-
-    value = (const int*)_element;
-
-    return (*value % 2 == 0);
-}
-
-static bool pred_is_odd(const void* _element, void* _context)
-{
-    const int* value;
-
-    (void)_context;
-
-    if (!_element)
-    {
-        return false;
-    }
-
-    value = (const int*)_element;
-
-    return (*value % 2 != 0);
-}
-
-static bool pred_is_positive(const void* _element, void* _context)
-{
-    const int* value;
-
-    (void)_context;
-
-    if (!_element)
-    {
-        return false;
-    }
-
-    value = (const int*)_element;
-
-    return (*value > 0);
-}
-
-static bool pred_is_negative(const void* _element, void* _context)
-{
-    const int* value;
-
-    (void)_context;
-
-    if (!_element)
-    {
-        return false;
-    }
-
-    value = (const int*)_element;
-
-    return (*value < 0);
-}
-
-static bool pred_greater_than_threshold(const void* _element, void* _context)
-{
-    const int* value;
-    const int* threshold;
-
-    if ( (!_element) ||
-         (!_context) )
-    {
-        return false;
-    }
-
-    value     = (const int*)_element;
-    threshold = (const int*)_context;
-
-    return (*value > *threshold);
-}
+#include ".\predicate_tests_sa_helpers.h"
 
 
 /*
@@ -105,13 +7,17 @@ d_tests_sa_predicate_and_eval
   Tests the d_predicate_and_eval evaluation function.
   Tests the following:
   - NULL combo rejection
-  - NULL predicate rejection
-  - NULL element handling
+  - NULL predicate1 rejection
+  - NULL predicate2 rejection
+  - both NULL predicates rejection
   - true && true = true
   - true && false = false
   - false && true = false (short-circuit)
   - false && false = false
-  - context passing
+  - real predicate logic (even AND positive)
+  - context passing (greater_than_threshold AND is_even)
+  - NULL element handling
+  - zero boundary value
 */
 bool
 d_tests_sa_predicate_and_eval
@@ -163,7 +69,21 @@ d_tests_sa_predicate_and_eval
         free(combo);
     }
 
-    // test 4: true AND true = true
+    // test 4: both NULL predicates should return false
+    combo = d_predicate_and_new(NULL, NULL, NULL, NULL);
+
+    if (combo)
+    {
+        result = d_assert_standalone(
+            d_predicate_and_eval(combo, &value) == false,
+            "and_eval_both_null_predicates",
+            "both NULL predicates should return false",
+            _counter) && result;
+
+        free(combo);
+    }
+
+    // test 5: true AND true = true
     combo = d_predicate_and_new(pred_always_true,
                                  NULL,
                                  pred_always_true,
@@ -181,7 +101,7 @@ d_tests_sa_predicate_and_eval
         free(combo);
     }
 
-    // test 5: true AND false = false
+    // test 6: true AND false = false
     combo = d_predicate_and_new(pred_always_true,
                                  NULL,
                                  pred_always_false,
@@ -199,7 +119,7 @@ d_tests_sa_predicate_and_eval
         free(combo);
     }
 
-    // test 6: false AND true = false (short-circuit test)
+    // test 7: false AND true = false (short-circuit test)
     combo = d_predicate_and_new(pred_always_false,
                                  NULL,
                                  pred_always_true,
@@ -217,7 +137,7 @@ d_tests_sa_predicate_and_eval
         free(combo);
     }
 
-    // test 7: false AND false = false
+    // test 8: false AND false = false
     combo = d_predicate_and_new(pred_always_false,
                                  NULL,
                                  pred_always_false,
@@ -235,11 +155,12 @@ d_tests_sa_predicate_and_eval
         free(combo);
     }
 
-    // test 8: even AND positive (both true)
+    // test 9: even AND positive (both true)
     combo = d_predicate_and_new(pred_is_even, NULL, pred_is_positive, NULL);
 
     if (combo)
     {
+        // 4 is even and positive = true
         value  = 4;
         result = d_assert_standalone(
             d_predicate_and_eval(combo, &value) == true,
@@ -247,7 +168,7 @@ d_tests_sa_predicate_and_eval
             "4 is even AND positive = true",
             _counter) && result;
 
-        // test with odd positive (even fails)
+        // 3 is odd but positive (even fails)
         value  = 3;
         result = d_assert_standalone(
             d_predicate_and_eval(combo, &value) == false,
@@ -255,7 +176,7 @@ d_tests_sa_predicate_and_eval
             "3 is odd, so even AND positive = false",
             _counter) && result;
 
-        // test with even negative (positive fails)
+        // -4 is even but negative (positive fails)
         value  = -4;
         result = d_assert_standalone(
             d_predicate_and_eval(combo, &value) == false,
@@ -266,7 +187,7 @@ d_tests_sa_predicate_and_eval
         free(combo);
     }
 
-    // test 9: context usage
+    // test 10: context usage
     combo = d_predicate_and_new(pred_greater_than_threshold,
                                  &threshold,
                                  pred_is_even,
@@ -301,7 +222,7 @@ d_tests_sa_predicate_and_eval
         free(combo);
     }
 
-    // test 10: NULL element handling
+    // test 11: NULL element handling
     combo = d_predicate_and_new(pred_is_even, NULL, pred_is_positive, NULL);
 
     if (combo)
@@ -310,6 +231,21 @@ d_tests_sa_predicate_and_eval
             d_predicate_and_eval(combo, NULL) == false,
             "and_eval_null_element",
             "NULL element should return false (predicates check for NULL)",
+            _counter) && result;
+
+        free(combo);
+    }
+
+    // test 12: zero boundary value (0 is even but not positive)
+    combo = d_predicate_and_new(pred_is_even, NULL, pred_is_positive, NULL);
+
+    if (combo)
+    {
+        value  = 0;
+        result = d_assert_standalone(
+            d_predicate_and_eval(combo, &value) == false,
+            "and_eval_zero_boundary",
+            "0 is even but not positive, so AND = false",
             _counter) && result;
 
         free(combo);
@@ -324,12 +260,17 @@ d_tests_sa_predicate_or_eval
   Tests the d_predicate_or_eval evaluation function.
   Tests the following:
   - NULL combo rejection
-  - NULL predicate rejection
+  - NULL predicate1 rejection
+  - NULL predicate2 rejection
+  - both NULL predicates rejection
   - true || true = true
   - true || false = true (short-circuit)
   - false || true = true
   - false || false = false
-  - context passing
+  - real predicate logic (even OR positive)
+  - context passing (greater_than_threshold OR is_negative)
+  - NULL element handling
+  - zero boundary value
 */
 bool
 d_tests_sa_predicate_or_eval
@@ -381,7 +322,21 @@ d_tests_sa_predicate_or_eval
         free(combo);
     }
 
-    // test 4: true OR true = true
+    // test 4: both NULL predicates should return false
+    combo = d_predicate_or_new(NULL, NULL, NULL, NULL);
+
+    if (combo)
+    {
+        result = d_assert_standalone(
+            d_predicate_or_eval(combo, &value) == false,
+            "or_eval_both_null_predicates",
+            "both NULL predicates should return false",
+            _counter) && result;
+
+        free(combo);
+    }
+
+    // test 5: true OR true = true
     combo = d_predicate_or_new(pred_always_true, NULL, pred_always_true, NULL);
 
     if (combo)
@@ -396,7 +351,7 @@ d_tests_sa_predicate_or_eval
         free(combo);
     }
 
-    // test 5: true OR false = true (short-circuit test)
+    // test 6: true OR false = true (short-circuit test)
     combo = d_predicate_or_new(pred_always_true,
                                 NULL,
                                 pred_always_false,
@@ -414,7 +369,7 @@ d_tests_sa_predicate_or_eval
         free(combo);
     }
 
-    // test 6: false OR true = true
+    // test 7: false OR true = true
     combo = d_predicate_or_new(pred_always_false,
                                 NULL,
                                 pred_always_true,
@@ -432,7 +387,7 @@ d_tests_sa_predicate_or_eval
         free(combo);
     }
 
-    // test 7: false OR false = false
+    // test 8: false OR false = false
     combo = d_predicate_or_new(pred_always_false,
                                 NULL,
                                 pred_always_false,
@@ -450,7 +405,7 @@ d_tests_sa_predicate_or_eval
         free(combo);
     }
 
-    // test 8: even OR positive
+    // test 9: even OR positive
     combo = d_predicate_or_new(pred_is_even, NULL, pred_is_positive, NULL);
 
     if (combo)
@@ -490,7 +445,7 @@ d_tests_sa_predicate_or_eval
         free(combo);
     }
 
-    // test 9: context usage
+    // test 10: context usage
     combo = d_predicate_or_new(pred_greater_than_threshold,
                                 &threshold,
                                 pred_is_negative,
@@ -525,6 +480,35 @@ d_tests_sa_predicate_or_eval
         free(combo);
     }
 
+    // test 11: NULL element handling
+    combo = d_predicate_or_new(pred_is_even, NULL, pred_is_positive, NULL);
+
+    if (combo)
+    {
+        result = d_assert_standalone(
+            d_predicate_or_eval(combo, NULL) == false,
+            "or_eval_null_element",
+            "NULL element should return false (both predicates return false)",
+            _counter) && result;
+
+        free(combo);
+    }
+
+    // test 12: zero boundary value (0 is even but not positive)
+    combo = d_predicate_or_new(pred_is_even, NULL, pred_is_positive, NULL);
+
+    if (combo)
+    {
+        value  = 0;
+        result = d_assert_standalone(
+            d_predicate_or_eval(combo, &value) == true,
+            "or_eval_zero_boundary",
+            "0 is even, so even OR positive = true",
+            _counter) && result;
+
+        free(combo);
+    }
+
     return result;
 }
 
@@ -534,12 +518,17 @@ d_tests_sa_predicate_xor_eval
   Tests the d_predicate_xor_eval evaluation function.
   Tests the following:
   - NULL combo rejection
-  - NULL predicate rejection
+  - NULL predicate1 rejection
+  - NULL predicate2 rejection
+  - both NULL predicates rejection
   - true XOR true = false
   - true XOR false = true
   - false XOR true = true
   - false XOR false = false
-  - no short-circuit (both predicates always evaluated)
+  - mutually exclusive predicates (even XOR odd)
+  - overlapping predicates (even XOR positive)
+  - context passing (greater_than_threshold XOR is_even)
+  - NULL element handling
 */
 bool
 d_tests_sa_predicate_xor_eval
@@ -550,8 +539,10 @@ d_tests_sa_predicate_xor_eval
     bool                    result;
     struct d_predicate_xor* combo;
     int                     value;
+    int                     threshold;
 
-    result = true;
+    result    = true;
+    threshold = 5;
 
     // test 1: NULL combo should return false
     value  = 10;
@@ -589,7 +580,21 @@ d_tests_sa_predicate_xor_eval
         free(combo);
     }
 
-    // test 4: true XOR true = false
+    // test 4: both NULL predicates should return false
+    combo = d_predicate_xor_new(NULL, NULL, NULL, NULL);
+
+    if (combo)
+    {
+        result = d_assert_standalone(
+            d_predicate_xor_eval(combo, &value) == false,
+            "xor_eval_both_null_predicates",
+            "both NULL predicates should return false",
+            _counter) && result;
+
+        free(combo);
+    }
+
+    // test 5: true XOR true = false
     combo = d_predicate_xor_new(pred_always_true,
                                  NULL,
                                  pred_always_true,
@@ -607,7 +612,7 @@ d_tests_sa_predicate_xor_eval
         free(combo);
     }
 
-    // test 5: true XOR false = true
+    // test 6: true XOR false = true
     combo = d_predicate_xor_new(pred_always_true,
                                  NULL,
                                  pred_always_false,
@@ -625,7 +630,7 @@ d_tests_sa_predicate_xor_eval
         free(combo);
     }
 
-    // test 6: false XOR true = true
+    // test 7: false XOR true = true
     combo = d_predicate_xor_new(pred_always_false,
                                  NULL,
                                  pred_always_true,
@@ -643,7 +648,7 @@ d_tests_sa_predicate_xor_eval
         free(combo);
     }
 
-    // test 7: false XOR false = false
+    // test 8: false XOR false = false
     combo = d_predicate_xor_new(pred_always_false,
                                  NULL,
                                  pred_always_false,
@@ -661,12 +666,12 @@ d_tests_sa_predicate_xor_eval
         free(combo);
     }
 
-    // test 8: even XOR odd (mutually exclusive)
+    // test 9: even XOR odd (mutually exclusive)
     combo = d_predicate_xor_new(pred_is_even, NULL, pred_is_odd, NULL);
 
     if (combo)
     {
-        // even number (4)
+        // even number (4): even=true, odd=false -> XOR=true
         value  = 4;
         result = d_assert_standalone(
             d_predicate_xor_eval(combo, &value) == true,
@@ -674,7 +679,7 @@ d_tests_sa_predicate_xor_eval
             "4 is even XOR odd = true",
             _counter) && result;
 
-        // odd number (5)
+        // odd number (5): even=false, odd=true -> XOR=true
         value  = 5;
         result = d_assert_standalone(
             d_predicate_xor_eval(combo, &value) == true,
@@ -685,7 +690,7 @@ d_tests_sa_predicate_xor_eval
         free(combo);
     }
 
-    // test 9: even XOR positive (can both be true)
+    // test 10: even XOR positive (can both be true)
     combo = d_predicate_xor_new(pred_is_even, NULL, pred_is_positive, NULL);
 
     if (combo)
@@ -725,6 +730,63 @@ d_tests_sa_predicate_xor_eval
         free(combo);
     }
 
+    // test 11: context usage (greater_than_threshold XOR is_even)
+    combo = d_predicate_xor_new(pred_greater_than_threshold,
+                                 &threshold,
+                                 pred_is_even,
+                                 NULL);
+
+    if (combo)
+    {
+        // 10 > 5 and 10 is even -> both true, XOR = false
+        value  = 10;
+        result = d_assert_standalone(
+            d_predicate_xor_eval(combo, &value) == false,
+            "xor_eval_context_10",
+            "10 > 5 and even, XOR = false",
+            _counter) && result;
+
+        // 7 > 5 and 7 is odd -> only first true, XOR = true
+        value  = 7;
+        result = d_assert_standalone(
+            d_predicate_xor_eval(combo, &value) == true,
+            "xor_eval_context_7",
+            "7 > 5 but odd, XOR = true",
+            _counter) && result;
+
+        // 2 <= 5 and 2 is even -> only second true, XOR = true
+        value  = 2;
+        result = d_assert_standalone(
+            d_predicate_xor_eval(combo, &value) == true,
+            "xor_eval_context_2",
+            "2 <= 5 but even, XOR = true",
+            _counter) && result;
+
+        // 3 <= 5 and 3 is odd -> both false, XOR = false
+        value  = 3;
+        result = d_assert_standalone(
+            d_predicate_xor_eval(combo, &value) == false,
+            "xor_eval_context_3",
+            "3 <= 5 and odd, XOR = false",
+            _counter) && result;
+
+        free(combo);
+    }
+
+    // test 12: NULL element handling
+    combo = d_predicate_xor_new(pred_is_even, NULL, pred_is_positive, NULL);
+
+    if (combo)
+    {
+        result = d_assert_standalone(
+            d_predicate_xor_eval(combo, NULL) == false,
+            "xor_eval_null_element",
+            "NULL element: both return false, XOR = false",
+            _counter) && result;
+
+        free(combo);
+    }
+
     return result;
 }
 
@@ -737,7 +799,9 @@ d_tests_sa_predicate_not_eval
   - NULL predicate rejection
   - NOT true = false
   - NOT false = true
-  - context passing
+  - real predicate logic (NOT is_even, NOT is_positive)
+  - context passing (NOT greater_than_threshold)
+  - NULL element handling
 */
 bool
 d_tests_sa_predicate_not_eval

@@ -7,6 +7,8 @@ d_tests_sa_predicate_run_all
   Executes tests for all categories:
   - Constructor functions (_new variants)
   - Evaluation functions (_eval variants)
+  - Utility predicates (is_null, is_not_null)
+  - Compound literal macros (D_PREDICATE_* variants)
 */
 bool
 d_tests_sa_predicate_run_all
@@ -21,6 +23,7 @@ d_tests_sa_predicate_run_all
     // run all test categories
     result = d_tests_sa_predicate_constructor_all(_counter) && result;
     result = d_tests_sa_predicate_eval_all(_counter)        && result;
+    result = d_tests_sa_predicate_macro_all(_counter)       && result;
 
     return result;
 }

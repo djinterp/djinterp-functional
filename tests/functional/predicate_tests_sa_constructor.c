@@ -1,80 +1,15 @@
 #include ".\predicate_tests_sa.h"
-
-
-// helper predicate functions for testing
-static bool pred_always_true(const void* _element, void* _context)
-{
-    (void)_element;
-    (void)_context;
-
-    return true;
-}
-
-static bool pred_always_false(const void* _element, void* _context)
-{
-    (void)_element;
-    (void)_context;
-
-    return false;
-}
-
-static bool pred_is_even(const void* _element, void* _context)
-{
-    const int* value;
-
-    (void)_context;
-
-    if (!_element)
-    {
-        return false;
-    }
-
-    value = (const int*)_element;
-
-    return (*value % 2 == 0);
-}
-
-static bool pred_is_positive(const void* _element, void* _context)
-{
-    const int* value;
-
-    (void)_context;
-
-    if (!_element)
-    {
-        return false;
-    }
-
-    value = (const int*)_element;
-
-    return (*value > 0);
-}
-
-static bool pred_greater_than_threshold(const void* _element, void* _context)
-{
-    const int* value;
-    const int* threshold;
-
-    if ( (!_element) ||
-         (!_context) )
-    {
-        return false;
-    }
-
-    value     = (const int*)_element;
-    threshold = (const int*)_context;
-
-    return (*value > *threshold);
-}
+#include ".\predicate_tests_sa_helpers.h"
 
 
 /*
 d_tests_sa_predicate_and_new
   Tests the d_predicate_and_new constructor function.
   Tests the following:
-  - successful creation with valid predicates
-  - memory allocation verification
+  - successful creation with valid predicates and no context
   - predicate and context field initialization
+  - successful creation with contexts
+  - context pointer verification
   - NULL predicate handling (passed through, validated in eval)
 */
 bool
@@ -185,9 +120,10 @@ d_tests_sa_predicate_and_new
 d_tests_sa_predicate_or_new
   Tests the d_predicate_or_new constructor function.
   Tests the following:
-  - successful creation with valid predicates
-  - memory allocation verification
+  - successful creation with valid predicates and no context
   - predicate and context field initialization
+  - successful creation with context
+  - context pointer verification
 */
 bool
 d_tests_sa_predicate_or_new
@@ -264,8 +200,8 @@ d_tests_sa_predicate_xor_new
   Tests the d_predicate_xor_new constructor function.
   Tests the following:
   - successful creation with valid predicates
-  - memory allocation verification
   - predicate and context field initialization
+  - creation with mixed predicate types
 */
 bool
 d_tests_sa_predicate_xor_new
@@ -348,10 +284,10 @@ d_tests_sa_predicate_xor_new
 d_tests_sa_predicate_not_new
   Tests the d_predicate_not_new constructor function.
   Tests the following:
-  - successful creation with valid predicate
-  - memory allocation verification
+  - successful creation with valid predicate and no context
   - predicate and context field initialization
-  - NULL predicate handling
+  - successful creation with context
+  - creation with always_false predicate
 */
 bool
 d_tests_sa_predicate_not_new

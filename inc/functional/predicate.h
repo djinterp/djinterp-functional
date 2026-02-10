@@ -65,24 +65,24 @@ struct d_predicate_not
 #define D_PREDICATE_AND(predicate1, context1, predicate2, context2)   \
     ( (struct d_predicate_and){ (predicate1),                         \
                                 (predicate2),                         \
-                                (ctx1),                               \
-                                (ctx2) } )
+                                (context1),                           \
+                                (context2) } )
 
 // D_PREDICATE_OR
 //   macro: creates an OR combinator from two `d_predicate` with contexts.
 #define D_PREDICATE_OR(predicate1, context1, predicate2, context2)    \
     ( (struct d_predicate_or){ (predicate1),                          \
                                (predicate2),                          \
-                               (ctx1),                                \
-                               (ctx2) } )
+                               (context1),                            \
+                               (context2) } )
 
 // D_PREDICATE_XOR
 //   macro: creates an XOR combinator from two `d_predicate` with contexts.
 #define D_PREDICATE_XOR(predicate1, context1, predicate2, context2)   \
     ( (struct d_predicate_xor){ (predicate1),                         \
                                 (predicate2),                         \
-                                (ctx1),                               \
-                                (ctx2) } )
+                                (context1),                           \
+                                (context2) } )
 
 // D_PREDICATE_NOT
 //   macro: creates a NOT combinator from a `d_predicate` with context.
@@ -94,8 +94,8 @@ struct d_predicate_not
 //   macro: creates an AND combinator from two plain `d_predicate` (no 
 // context).
 #define D_PREDICATE_AND_SIMPLE(predicate1, predicate2)                \
-    ( (struct d_predicate_and){ predicate1,                           \
-                                predicate2,                           \
+    ( (struct d_predicate_and){ (predicate1),                         \
+                                (predicate2),                         \
                                 NULL,                                 \
                                 NULL } )
 
@@ -103,8 +103,8 @@ struct d_predicate_not
 //   macro: creates an OR combinator from two plain `d_predicate` (no 
 // context).
 #define D_PREDICATE_OR_SIMPLE(predicate1, predicate2)                 \
-    ( (struct d_predicate_or){ predicate1),                           \
-                               predicate2),                           \
+    ( (struct d_predicate_or){ (predicate1),                          \
+                               (predicate2),                          \
                                NULL,                                  \
                                NULL } )
 
@@ -112,15 +112,15 @@ struct d_predicate_not
 //   macro: creates an XOR combinator from two plain `d_predicate` (no 
 // context).
 #define D_PREDICATE_XOR_SIMPLE(predicate1, predicate2)                \
-    ( (struct d_predicate_xor){ predicate1),                          \
-                                predicate2),                          \
+    ( (struct d_predicate_xor){ (predicate1),                         \
+                                (predicate2),                         \
                                 NULL,                                 \
                                 NULL } )
 
 // D_PREDICATE_NOT_SIMPLE
 //   macro: creates a NOT combinator from a plain `d_predicate` (no context).
 #define D_PREDICATE_NOT_SIMPLE(predicate)                             \
-    ( (struct d_predicate_not){ predicate,                            \
+    ( (struct d_predicate_not){ (predicate),                          \
                                 NULL } )
 
 
