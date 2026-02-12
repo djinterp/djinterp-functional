@@ -18,9 +18,9 @@ contexts.
 struct d_predicate_and*
 d_predicate_and_new
 (
-    d_predicate _predicate1,
+    fn_predicate _predicate1,
     void*       _context1,
-    d_predicate _predicate2,
+    fn_predicate _predicate2,
     void*       _context2
 )
 {
@@ -58,9 +58,9 @@ contexts.
 struct d_predicate_or*
 d_predicate_or_new
 (
-    d_predicate _predicate1,
+    fn_predicate _predicate1,
     void*       _context1,
-    d_predicate _predicate2,
+    fn_predicate _predicate2,
     void*       _context2
 )
 {
@@ -98,9 +98,9 @@ contexts.
 struct d_predicate_xor*
 d_predicate_xor_new
 (
-    d_predicate _predicate1,
+    fn_predicate _predicate1,
     void*       _context1,
-    d_predicate _predicate2,
+    fn_predicate _predicate2,
     void*       _context2
 )
 {
@@ -134,7 +134,7 @@ Return:
 struct d_predicate_not*
 d_predicate_not_new
 (
-    d_predicate _predicate,
+    fn_predicate _predicate,
     void*       _context
 )
 {

@@ -20,8 +20,7 @@ d_fn_builder_new
 {
     struct d_fn_builder* builder;
 
-    builder = (struct d_fn_builder*)malloc(
-                  sizeof(struct d_fn_builder));
+    builder = malloc(sizeof(struct d_fn_builder));
 
     // check allocation
     if (!builder)
@@ -36,9 +35,8 @@ d_fn_builder_new
     builder->capacity        = 0;
 
     // pre-allocate arrays
-    builder->transforms = (d_transformer*)malloc(
-                              D_FN_BUILDER_INITIAL_CAPACITY
-                                  * sizeof(d_transformer));
+    builder->transforms = malloc(D_FN_BUILDER_INITIAL_CAPACITY * 
+                                 sizeof(fn_transformer));
 
     if (!builder->transforms)
     {
@@ -47,9 +45,8 @@ d_fn_builder_new
         return NULL;
     }
 
-    builder->predicates = (d_predicate*)malloc(
-                              D_FN_BUILDER_INITIAL_CAPACITY
-                                  * sizeof(d_predicate));
+    builder->predicates = malloc(D_FN_BUILDER_INITIAL_CAPACITY *
+                                 sizeof(fn_predicate));
 
     if (!builder->predicates)
     {
@@ -63,7 +60,6 @@ d_fn_builder_new
 
     return builder;
 }
-
 
 /*
 d_fn_builder_grow
@@ -84,8 +80,8 @@ d_fn_builder_grow
     size_t               _min_count
 )
 {
-    d_transformer* new_transforms;
-    d_predicate*   new_predicates;
+    fn_transformer* new_transforms;
+    fn_predicate*   new_predicates;
     size_t         new_capacity;
 
     if (_min_count <= _builder->capacity)
@@ -100,9 +96,9 @@ d_fn_builder_grow
         new_capacity = _min_count;
     }
 
-    new_transforms = (d_transformer*)realloc(
+    new_transforms = (fn_transformer*)realloc(
                          _builder->transforms,
-                         new_capacity * sizeof(d_transformer));
+                         new_capacity * sizeof(fn_transformer));
 
     if (!new_transforms)
     {
@@ -111,9 +107,9 @@ d_fn_builder_grow
 
     _builder->transforms = new_transforms;
 
-    new_predicates = (d_predicate*)realloc(
+    new_predicates = (fn_predicate*)realloc(
                          _builder->predicates,
-                         new_capacity * sizeof(d_predicate));
+                         new_capacity * sizeof(fn_predicate));
 
     if (!new_predicates)
     {
@@ -125,7 +121,6 @@ d_fn_builder_grow
 
     return true;
 }
-
 
 /*
 d_funtional_builder_map
@@ -142,7 +137,7 @@ struct d_fn_builder*
 d_funtional_builder_map
 (
     struct d_fn_builder* _builder,
-    d_transformer        _transform
+    fn_transformer        _transform
 )
 {
     // validate parameters
@@ -165,7 +160,6 @@ d_funtional_builder_map
     return _builder;
 }
 
-
 /*
 d_funtional_builder_filter
   Appends a predicate to the builder's predicate chain.
@@ -181,7 +175,7 @@ struct d_fn_builder*
 d_funtional_builder_filter
 (
     struct d_fn_builder* _builder,
-    d_predicate          _test
+    fn_predicate          _test
 )
 {
     // validate parameters
@@ -204,7 +198,6 @@ d_funtional_builder_filter
     return _builder;
 }
 
-
 /*
 d_funtional_builder_and_then
   Appends a transformer to the builder's transform chain. Alias for
@@ -221,12 +214,11 @@ struct d_fn_builder*
 d_funtional_builder_and_then
 (
     struct d_fn_builder* _builder,
-    d_transformer        _transform
+    fn_transformer        _transform
 )
 {
     return d_funtional_builder_map(_builder, _transform);
 }
-
 
 /*
 d_funtional_builder_where
@@ -244,12 +236,11 @@ struct d_fn_builder*
 d_funtional_builder_where
 (
     struct d_fn_builder* _builder,
-    d_predicate          _test
+    fn_predicate          _test
 )
 {
     return d_funtional_builder_filter(_builder, _test);
 }
-
 
 /*
 d_fn_builder_execute
@@ -286,7 +277,7 @@ d_fn_builder_execute
     unsigned char*       temp_a;
     unsigned char*       temp_b;
     unsigned char*       src;
-    unsigned char*       dst;
+    unsigned char*       destination;
     const unsigned char* in_bytes;
     unsigned char*       out_bytes;
     size_t               out_count;
@@ -295,16 +286,16 @@ d_fn_builder_execute
     bool                 passes;
 
     // validate parameters
-    if ( (!_builder)          ||
-         (!_input)            ||
-         (!_output)           ||
-         (!_out_count)        ||
-         (_count == 0)        ||
+    if ( (!_builder)   ||
+         (!_input)     ||
+         (!_output)    ||
+         (!_out_count) ||
+         (_count == 0) ||
          (_element_size == 0) )
     {
         if (_out_count)
         {
-            *_out_count = 0;
+            *(_out_count) = 0;
         }
 
         return false;
@@ -319,36 +310,37 @@ d_fn_builder_execute
          (_builder->predicate_count == 0) )
     {
         memcpy(_output, _input, _count * _element_size);
-        *_out_count = _count;
+        *(_out_count) = _count;
 
         return true;
     }
 
     // allocate temp buffers for transform ping-pong
-    temp_a = NULL;
-    temp_b = NULL;
-    src    = NULL;
-    dst    = NULL;
+    temp_a      = NULL;
+    temp_b      = NULL;
+    src         = NULL;
+    destination = NULL;
 
     if (_builder->transform_count > 0)
     {
-        temp_a = (unsigned char*)malloc(_element_size);
+        temp_a = malloc(_element_size);
 
         if (!temp_a)
         {
-            *_out_count = 0;
+            *(_out_count) = 0;
 
             return false;
         }
 
         if (_builder->transform_count > 1)
         {
-            temp_b = (unsigned char*)malloc(_element_size);
+            temp_b = malloc(_element_size);
 
             if (!temp_b)
             {
                 free(temp_a);
-                *_out_count = 0;
+
+                *(_out_count) = 0;
 
                 return false;
             }
@@ -376,23 +368,23 @@ d_fn_builder_execute
                     free(temp_b);
                 }
 
-                *_out_count = 0;
+                *(_out_count) = 0;
 
                 return false;
             }
 
             // subsequent transforms: ping-pong between temp buffers
             src = temp_a;
-            dst = temp_b;
+            destination = temp_b;
 
             for (t = 1; t < _builder->transform_count; t++)
             {
-                if (dst)
+                if (destination)
                 {
-                    memset(dst, 0, _element_size);
+                    memset(destination, 0, _element_size);
                 }
 
-                if (!_builder->transforms[t](src, dst, NULL))
+                if (!_builder->transforms[t](src, destination, NULL))
                 {
                     free(temp_a);
 
@@ -401,19 +393,19 @@ d_fn_builder_execute
                         free(temp_b);
                     }
 
-                    *_out_count = 0;
+                    *(_out_count) = 0;
 
                     return false;
                 }
 
-                // swap src and dst for next iteration
-                if (dst)
+                // swap src and destination for next iteration
+                if (destination)
                 {
                     unsigned char* swap;
 
                     swap = src;
-                    src  = dst;
-                    dst  = swap;
+                    src  = destination;
+                    destination  = swap;
                 }
             }
 
@@ -478,11 +470,10 @@ d_fn_builder_execute
         free(temp_b);
     }
 
-    *_out_count = out_count;
+    *(_out_count) = out_count;
 
     return true;
 }
-
 
 /*
 d_fn_builder_free

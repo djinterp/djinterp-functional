@@ -22,26 +22,25 @@ was NULL, _second was NULL, _temp_size was 0, or allocation failed.
 struct d_composed_transformer*
 d_functional_compose_new
 (
-    d_transformer _first,
-    void*         _context1,
-    d_transformer _second,
-    void*         _context2,
-    size_t        _temp_size
+    fn_transformer _first,
+    void*          _context1,
+    fn_transformer _second,
+    void*          _context2,
+    size_t         _temp_size
 )
 {
     struct d_composed_transformer* result;
     void*                          temp_buf;
 
     // validate parameters
-    if ( (!_first)          ||
-         (!_second)         ||
+    if ( (!_first)  ||
+         (!_second) ||
          (_temp_size == 0) )
     {
         return NULL;
     }
 
-    result = (struct d_composed_transformer*)malloc(
-                 sizeof(struct d_composed_transformer));
+    result = malloc(sizeof(struct d_composed_transformer));
 
     // check allocation
     if (!result)
@@ -51,7 +50,7 @@ d_functional_compose_new
 
     temp_buf = malloc(_temp_size);
 
-    // check allocation
+    // ensure that memory allocation was successful
     if (!temp_buf)
     {
         free(result);
@@ -68,7 +67,6 @@ d_functional_compose_new
 
     return result;
 }
-
 
 /*
 d_functional_compose_apply
@@ -96,7 +94,7 @@ d_functional_compose_apply
 )
 {
     // validate parameters
-    if ( (!_composed)            ||
+    if ( (!_composed)           ||
          (!_composed->first)    ||
          (!_composed->second)   ||
          (!_composed->temp_buf) ||
@@ -128,7 +126,6 @@ d_functional_compose_apply
     return true;
 }
 
-
 /*
 d_functional_compose_free
   Frees a composed transformer and its internal temporary buffer.
@@ -157,7 +154,6 @@ d_functional_compose_free
     return;
 }
 
-
 /*
 d_functional_partial_consumer_new
   Creates a heap-allocated partial consumer that binds a context value to a
@@ -174,7 +170,7 @@ was NULL or allocation failed.
 struct d_partial_consumer*
 d_functional_partial_consumer_new
 (
-    d_consumer _consumer,
+    fn_consumer _consumer,
     void*      _context
 )
 {
@@ -186,10 +182,9 @@ d_functional_partial_consumer_new
         return NULL;
     }
 
-    result = (struct d_partial_consumer*)malloc(
-                 sizeof(struct d_partial_consumer));
+    result = malloc(sizeof(struct d_partial_consumer));
 
-    // check allocation
+    // ensure that memory allocation was successful
     if (!result)
     {
         return NULL;
@@ -200,7 +195,6 @@ d_functional_partial_consumer_new
 
     return result;
 }
-
 
 /*
 d_functional_partial_consumer_apply
@@ -220,7 +214,7 @@ d_functional_partial_consumer_apply
 )
 {
     // validate parameters
-    if ( (!_partial)            ||
+    if ( (!_partial) ||
          (!_partial->consumer) )
     {
         return;
@@ -230,7 +224,6 @@ d_functional_partial_consumer_apply
 
     return;
 }
-
 
 /*
 d_functional_partial_consumer_free

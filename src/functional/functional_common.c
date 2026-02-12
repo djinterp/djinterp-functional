@@ -420,7 +420,7 @@ d_functional_map
     void*         _output,
     size_t        _count,
     size_t        _element_size,
-    d_transformer _transform,
+    fn_transformer _transform,
     void*         _context
 )
 {
@@ -480,7 +480,7 @@ d_functional_filter
     void*       _output,
     size_t      _count,
     size_t      _element_size,
-    d_predicate _test,
+    fn_predicate _test,
     void*       _context
 )
 {
@@ -544,7 +544,7 @@ d_functional_fold_left
     size_t        _count,
     size_t        _element_size,
     void*         _accumulator,
-    d_accumulator _combine,
+    fn_accumulator _combine,
     void*         _context
 )
 {
@@ -603,7 +603,7 @@ d_functional_fold_right
     size_t        _count,
     size_t        _element_size,
     void*         _accumulator,
-    d_accumulator _combine,
+    fn_accumulator _combine,
     void*         _context
 )
 {
@@ -656,7 +656,7 @@ d_functional_for_each
     void*      _input,
     size_t     _count,
     size_t     _element_size,
-    d_consumer _apply,
+    fn_consumer _apply,
     void*      _context
 )
 {
@@ -704,7 +704,7 @@ d_functional_for_each_const
     const void*      _input,
     size_t           _count,
     size_t           _element_size,
-    d_consumer_const _apply,
+    fn_consumer_const _apply,
     void*            _context
 )
 {
@@ -755,7 +755,7 @@ d_functional_any
     const void* _input,
     size_t      _count,
     size_t      _element_size,
-    d_predicate _test,
+    fn_predicate _test,
     void*       _context
 )
 {
@@ -809,7 +809,7 @@ d_functional_all
     const void* _input,
     size_t      _count,
     size_t      _element_size,
-    d_predicate _test,
+    fn_predicate _test,
     void*       _context
 )
 {
@@ -863,7 +863,7 @@ d_functional_none
     const void* _input,
     size_t      _count,
     size_t      _element_size,
-    d_predicate _test,
+    fn_predicate _test,
     void*       _context
 )
 {
@@ -915,7 +915,7 @@ d_functional_count_if
     const void* _input,
     size_t      _count,
     size_t      _element_size,
-    d_predicate _test,
+    fn_predicate _test,
     void*       _context
 )
 {
@@ -971,7 +971,7 @@ d_functional_find_if
     const void* _input,
     size_t      _count,
     size_t      _element_size,
-    d_predicate _test,
+    fn_predicate _test,
     void*       _context
 )
 {

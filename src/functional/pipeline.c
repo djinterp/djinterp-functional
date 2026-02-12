@@ -133,7 +133,7 @@ struct d_functional_pipeline
 d_functional_pipeline_map
 (
     struct d_functional_pipeline _pipe,
-    d_transformer                _transform,
+    fn_transformer                _transform,
     void*                        _context
 )
 {
@@ -219,7 +219,7 @@ struct d_functional_pipeline
 d_functional_pipeline_filter
 (
     struct d_functional_pipeline _pipe,
-    d_predicate                  _test,
+    fn_predicate                  _test,
     void*                        _context
 )
 {
@@ -312,7 +312,7 @@ d_functional_pipeline_fold
     struct d_functional_pipeline _pipe,
     void*                        _initial,
     size_t                       _accumulator_size,
-    d_accumulator                _combine,
+    fn_accumulator                _combine,
     void*                        _context
 )
 {
@@ -384,7 +384,7 @@ struct d_functional_pipeline
 d_functional_pipeline_for_each
 (
     struct d_functional_pipeline _pipe,
-    d_consumer                   _apply,
+    fn_consumer                   _apply,
     void*                        _context
 )
 {
