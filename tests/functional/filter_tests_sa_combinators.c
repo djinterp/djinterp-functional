@@ -34,7 +34,7 @@ static bool pred_is_positive(const void* _element, void* _context)
     return (*value > 0);
 }
 
-static bool pred_greater_than_ctx(const void* _element, void* _context)
+static bool pred_greater_than_context(const void* _element, void* _context)
 {
     const int* value;
     const int* threshold;
@@ -387,8 +387,8 @@ d_tests_sa_filter_difference
          (chain_exc) )
     {
         d_filter_chain_add_where(chain_inc, pred_is_even);
-        d_filter_chain_add_where_ctx(chain_exc,
-                                     pred_greater_than_ctx,
+        d_filter_chain_add_where_context(chain_exc,
+                                     pred_greater_than_context,
                                      &threshold);
 
         diff   = d_filter_difference_new(chain_inc, chain_exc);

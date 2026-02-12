@@ -16,7 +16,7 @@
 *   - Operations are composable (can be chained sequentially)
 *   - Operations are combinable (via union/intersection/difference)
 *   - Each operation is independent and self-contained
-*   - Reuses functional module types (fn_predicate, fn_comparator)
+*   - Reuses functional module types (fn_predicate, fn_function_comparator)
 *   - Zero-cost abstractions where possible
 *
 * TYPICAL USAGE PATTERNS:
@@ -232,39 +232,39 @@ struct d_filter_result
 ///////////////////////////////////////////////////////////////////////////////
 
 // i.    take operations
-struct d_filter_operation d_filter_take_first(size_t _n);
-struct d_filter_operation d_filter_take_last(size_t _n);
-struct d_filter_operation d_filter_take_nth(size_t _n);
-struct d_filter_operation d_filter_head(void);
-struct d_filter_operation d_filter_tail(void);
+struct d_filter_operation* d_filter_take_first(size_t _n);
+struct d_filter_operation* d_filter_take_last(size_t _n);
+struct d_filter_operation* d_filter_take_nth(size_t _n);
+struct d_filter_operation* d_filter_head(void);
+struct d_filter_operation* d_filter_tail(void);
 
 // ii.   skip operations
-struct d_filter_operation d_filter_skip_first(size_t _n);
-struct d_filter_operation d_filter_skip_last(size_t _n);
-struct d_filter_operation d_filter_init(void);
-struct d_filter_operation d_filter_rest(void);
+struct d_filter_operation* d_filter_skip_first(size_t _n);
+struct d_filter_operation* d_filter_skip_last(size_t _n);
+struct d_filter_operation* d_filter_init(void);
+struct d_filter_operation* d_filter_rest(void);
 
 // iii.  range and slice operations
-struct d_filter_operation d_filter_range(size_t _start, size_t _end);
-struct d_filter_operation d_filter_slice(size_t _start, size_t _end,
+struct d_filter_operation* d_filter_range(size_t _start, size_t _end);
+struct d_filter_operation* d_filter_slice(size_t _start, size_t _end,
                                          size_t _step);
 
 // iv.   predicate-based operations
-struct d_filter_operation d_filter_where(fn_predicate _test);
-struct d_filter_operation d_filter_where_ctx(fn_predicate _test,
+struct d_filter_operation* d_filter_where(fn_predicate _test);
+struct d_filter_operation* d_filter_where_context(fn_predicate _test,
                                               void* _context);
-struct d_filter_operation d_filter_where_not(fn_predicate _test);
-struct d_filter_operation d_filter_where_not_ctx(fn_predicate _test,
+struct d_filter_operation* d_filter_where_not(fn_predicate _test);
+struct d_filter_operation* d_filter_where_not_context(fn_predicate _test,
                                                   void* _context);
 
 // v.    index-based operations
-struct d_filter_operation d_filter_at(size_t _index);
-struct d_filter_operation d_filter_at_indices(const size_t* _indices,
+struct d_filter_operation* d_filter_at(size_t _index);
+struct d_filter_operation* d_filter_at_indices(const size_t* _indices,
                                                size_t _count);
 
 // vi.   transformation operations
-struct d_filter_operation d_filter_distinct(fn_comparator _cmp);
-struct d_filter_operation d_filter_reverse(void);
+struct d_filter_operation* d_filter_distinct(fn_function_comparator _comparator);
+struct d_filter_operation* d_filter_reverse(void);
 
 // vii.  operation cleanup
 void d_filter_operation_free(struct d_filter_operation* _op);
@@ -286,24 +286,24 @@ bool d_filter_chain_add(struct d_filter_chain* _chain,
 
 // iii.  convenience add helpers
 bool d_filter_chain_add_take_first(struct d_filter_chain* _chain,
-                                   size_t _n);
+                                    size_t _n);
 bool d_filter_chain_add_take_last(struct d_filter_chain* _chain,
-                                  size_t _n);
-bool d_filter_chain_add_skip_first(struct d_filter_chain* _chain,
                                    size_t _n);
+bool d_filter_chain_add_skip_first(struct d_filter_chain* _chain,
+                                    size_t _n);
 bool d_filter_chain_add_skip_last(struct d_filter_chain* _chain,
                                    size_t _n);
 bool d_filter_chain_add_range(struct d_filter_chain* _chain,
-                              size_t _start, size_t _end);
+                               size_t _start, size_t _end);
 bool d_filter_chain_add_where(struct d_filter_chain* _chain,
-                              fn_predicate _test);
-bool d_filter_chain_add_where_ctx(struct d_filter_chain* _chain,
-                                  fn_predicate            _test, 
-                                  void*                  _context);
+                               fn_predicate _test);
+bool d_filter_chain_add_where_context(struct d_filter_chain* _chain,
+                                   fn_predicate _test, void* _context);
 
 // iv.   combining chains
-struct d_filter_chain* d_filter_chain_concat(const struct d_filter_chain* _first, 
-                                             const struct d_filter_chain* _second);
+struct d_filter_chain* d_filter_chain_concat(
+                           const struct d_filter_chain* _first,
+                           const struct d_filter_chain* _second);
 bool d_filter_chain_append(struct d_filter_chain* _dest,
                             const struct d_filter_chain* _source);
 
@@ -382,27 +382,27 @@ void d_filter_difference_free(
 ///////////////////////////////////////////////////////////////////////////////
 
 // i.    apply single operation
-struct d_filter_result d_filter_apply_operation(
+struct d_filter_result* d_filter_apply_operation(
                            const struct d_filter_operation* _op,
                            const void* _input, size_t _count,
                            size_t _element_size);
 
 // ii.   apply filter chain
-struct d_filter_result d_filter_apply_chain(
+struct d_filter_result* d_filter_apply_chain(
                            const struct d_filter_chain* _chain,
                            const void* _input, size_t _count,
                            size_t _element_size);
 
 // iii.  apply combinators
-struct d_filter_result d_filter_apply_union(
+struct d_filter_result* d_filter_apply_union(
                            const struct d_filter_union* _union,
                            const void* _input, size_t _count,
                            size_t _element_size);
-struct d_filter_result d_filter_apply_intersection(
+struct d_filter_result* d_filter_apply_intersection(
                            const struct d_filter_intersection* _inter,
                            const void* _input, size_t _count,
                            size_t _element_size);
-struct d_filter_result d_filter_apply_difference(
+struct d_filter_result* d_filter_apply_difference(
                            const struct d_filter_difference* _diff,
                            const void* _input, size_t _count,
                            size_t _element_size);
@@ -432,7 +432,13 @@ size_t d_filter_apply_in_place(const struct d_filter_chain* _chain,
                                 void* _array, size_t _count,
                                 size_t _element_size);
 
-// vii.  result management
+// vii.  single-element evaluation
+bool d_filter_chain_matches_element(
+         const struct d_filter_chain* _chain,
+         const void* _element,
+         size_t _element_size);
+
+// viii. result management
 void d_filter_result_free(struct d_filter_result* _result);
 
 
@@ -544,7 +550,7 @@ struct d_filter_builder* d_filter_builder_skip_last(
 struct d_filter_builder* d_filter_builder_where(
                              struct d_filter_builder* _builder,
                              fn_predicate _test);
-struct d_filter_builder* d_filter_builder_where_ctx(
+struct d_filter_builder* d_filter_builder_where_context(
                              struct d_filter_builder* _builder,
                              fn_predicate _test, void* _context);
 struct d_filter_builder* d_filter_builder_where_not(
@@ -559,7 +565,7 @@ struct d_filter_builder* d_filter_builder_slice(
                              size_t _step);
 struct d_filter_builder* d_filter_builder_distinct(
                              struct d_filter_builder* _builder,
-                             fn_comparator _cmp);
+                             fn_function_comparator _comparator);
 struct d_filter_builder* d_filter_builder_reverse(
                              struct d_filter_builder* _builder);
 struct d_filter_builder* d_filter_builder_at(
@@ -572,7 +578,7 @@ struct d_filter_builder* d_filter_builder_at_indices(
 // iii.  builder finalization
 struct d_filter_chain*  d_filter_builder_build(
                             struct d_filter_builder* _builder);
-struct d_filter_result  d_filter_builder_apply(
+struct d_filter_result* d_filter_builder_apply(
                             struct d_filter_builder* _builder,
                             const void* _input, size_t _count,
                             size_t _element_size);
@@ -596,7 +602,7 @@ void d_filter_builder_free(struct d_filter_builder* _builder);
 // D_FILTER
 //   macro: creates and applies a simple filter in one expression.
 #define D_FILTER(INPUT, COUNT, SIZE, OP)                             \
-    d_filter_apply_operation(&(OP), (INPUT), (COUNT), (SIZE))
+    d_filter_apply_operation((OP), (INPUT), (COUNT), (SIZE))
 
 // D_FILTER_CHAIN_BEGIN
 //   macro: creates a new filter chain.
@@ -605,7 +611,7 @@ void d_filter_builder_free(struct d_filter_builder* _builder);
 // D_FILTER_CHAIN_ADD
 //   macro: adds an operation to a chain.
 #define D_FILTER_CHAIN_ADD(CHAIN, OP)                                \
-    d_filter_chain_add((CHAIN), &(OP))
+    d_filter_chain_add((CHAIN), (OP))
 
 // D_FILTER_CHAIN_END
 //   macro: identity macro for chain construction readability.

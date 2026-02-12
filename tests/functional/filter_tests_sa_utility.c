@@ -76,7 +76,7 @@ d_tests_sa_filter_validation
 )
 {
     bool                      result;
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
     struct d_filter_chain*    chain;
 
     result = true;
@@ -86,7 +86,7 @@ d_tests_sa_filter_validation
     // test 1: take_first is valid
     op     = d_filter_take_first(5);
     result = d_assert_standalone(
-        d_filter_operation_is_valid(&op) == true,
+        d_filter_operation_is_valid(op) == true,
         "validate_op_take_first",
         "take_first(5) should be valid",
         _counter) && result;
@@ -94,7 +94,7 @@ d_tests_sa_filter_validation
     // test 2: where with predicate is valid
     op     = d_filter_where(pred_is_even);
     result = d_assert_standalone(
-        d_filter_operation_is_valid(&op) == true,
+        d_filter_operation_is_valid(op) == true,
         "validate_op_where",
         "where(pred_is_even) should be valid",
         _counter) && result;
@@ -102,7 +102,7 @@ d_tests_sa_filter_validation
     // test 3: range with start < end is valid
     op     = d_filter_range(1, 5);
     result = d_assert_standalone(
-        d_filter_operation_is_valid(&op) == true,
+        d_filter_operation_is_valid(op) == true,
         "validate_op_range",
         "range(1, 5) should be valid",
         _counter) && result;
@@ -110,7 +110,7 @@ d_tests_sa_filter_validation
     // test 4: distinct with comparator is valid
     op     = d_filter_distinct(cmp_int);
     result = d_assert_standalone(
-        d_filter_operation_is_valid(&op) == true,
+        d_filter_operation_is_valid(op) == true,
         "validate_op_distinct",
         "distinct(cmp_int) should be valid",
         _counter) && result;
@@ -118,7 +118,7 @@ d_tests_sa_filter_validation
     // test 5: reverse is valid
     op     = d_filter_reverse();
     result = d_assert_standalone(
-        d_filter_operation_is_valid(&op) == true,
+        d_filter_operation_is_valid(op) == true,
         "validate_op_reverse",
         "reverse should be valid",
         _counter) && result;
@@ -126,36 +126,39 @@ d_tests_sa_filter_validation
     // test 6: skip_first is valid
     op     = d_filter_skip_first(3);
     result = d_assert_standalone(
-        d_filter_operation_is_valid(&op) == true,
+        d_filter_operation_is_valid(op) == true,
         "validate_op_skip_first",
         "skip_first(3) should be valid",
         _counter) && result;
 
     // test 7: operation with type NONE is valid (no-op)
-    d_memset(&op, 0, sizeof(op));
-    op.type = D_FILTER_OP_NONE;
+    op = malloc(sizeof(struct d_filter_operation));
+    d_memset(op, 0, sizeof(*op));
+    op->type = D_FILTER_OP_NONE;
     result  = d_assert_standalone(
-        d_filter_operation_is_valid(&op) == true,
+        d_filter_operation_is_valid(op) == true,
         "validate_op_none",
         "operation with type NONE should be valid (no-op)",
         _counter) && result;
 
     // test 8: where with NULL predicate is invalid
-    d_memset(&op, 0, sizeof(op));
-    op.type       = D_FILTER_OP_WHERE;
-    op.params.test = NULL;
+    op = malloc(sizeof(struct d_filter_operation));
+    d_memset(op, 0, sizeof(*op));
+    op->type       = D_FILTER_OP_WHERE;
+    op->params.test = NULL;
     result = d_assert_standalone(
-        d_filter_operation_is_valid(&op) == false,
+        d_filter_operation_is_valid(op) == false,
         "validate_op_where_null_pred",
         "where with NULL predicate should be invalid",
         _counter) && result;
 
     // test 9: distinct with NULL comparator is invalid
-    d_memset(&op, 0, sizeof(op));
-    op.type             = D_FILTER_OP_DISTINCT;
-    op.params.comparator = NULL;
+    op = malloc(sizeof(struct d_filter_operation));
+    d_memset(op, 0, sizeof(*op));
+    op->type             = D_FILTER_OP_DISTINCT;
+    op->params.comparator = NULL;
     result = d_assert_standalone(
-        d_filter_operation_is_valid(&op) == false,
+        d_filter_operation_is_valid(op) == false,
         "validate_op_distinct_null_cmp",
         "distinct with NULL comparator should be invalid",
         _counter) && result;
@@ -209,16 +212,30 @@ d_tests_sa_filter_validation
         d_filter_chain_add_take_first(chain, 2);
 
         // manually inject an invalid operation
-        d_memset(&op, 0, sizeof(op));
-        op.type        = D_FILTER_OP_WHERE;
-        op.params.test = NULL;
-        d_filter_chain_add(chain, &op);
+        op = malloc(sizeof(struct d_filter_operation));
 
-        result = d_assert_standalone(
-            d_filter_chain_is_valid(chain) == false,
-            "validate_chain_invalid_op",
-            "chain with an invalid op should be invalid",
-            _counter) && result;
+        if (op)
+        {
+            d_memset(op, 0, sizeof(*op));
+
+            op->type        = D_FILTER_OP_WHERE;
+            op->params.test = NULL;
+            d_filter_chain_add(chain, op);
+
+            result = d_assert_standalone(
+                d_filter_chain_is_valid(chain) == false,
+                "validate_chain_invalid_op",
+                "chain with an invalid op should be invalid",
+                _counter) && result;
+        }
+        else
+        {
+            result = d_assert_standalone(
+                false,
+                "",
+                "malloc failed!",
+                _counter) && result;
+        }
 
         d_filter_chain_free(chain);
     }
@@ -253,7 +270,7 @@ d_tests_sa_filter_to_string
 )
 {
     bool                      result;
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
     struct d_filter_chain*    chain;
     char*                     str;
 
@@ -261,7 +278,7 @@ d_tests_sa_filter_to_string
 
     // test 1: take_first to_string returns non-NULL
     op  = d_filter_take_first(5);
-    str = d_filter_operation_to_string(&op);
+    str = d_filter_operation_to_string(op);
 
     result = d_assert_standalone(
         str != NULL,
@@ -282,7 +299,7 @@ d_tests_sa_filter_to_string
 
     // test 2: where to_string returns non-NULL
     op  = d_filter_where(pred_is_even);
-    str = d_filter_operation_to_string(&op);
+    str = d_filter_operation_to_string(op);
 
     result = d_assert_standalone(
         str != NULL,
@@ -297,7 +314,7 @@ d_tests_sa_filter_to_string
 
     // test 3: range to_string returns non-NULL
     op  = d_filter_range(2, 8);
-    str = d_filter_operation_to_string(&op);
+    str = d_filter_operation_to_string(op);
 
     result = d_assert_standalone(
         str != NULL,
@@ -312,7 +329,7 @@ d_tests_sa_filter_to_string
 
     // test 4: reverse to_string returns non-NULL
     op  = d_filter_reverse();
-    str = d_filter_operation_to_string(&op);
+    str = d_filter_operation_to_string(op);
 
     result = d_assert_standalone(
         str != NULL,
@@ -327,7 +344,7 @@ d_tests_sa_filter_to_string
 
     // test 5: slice to_string returns non-NULL
     op  = d_filter_slice(0, 10, 2);
-    str = d_filter_operation_to_string(&op);
+    str = d_filter_operation_to_string(op);
 
     result = d_assert_standalone(
         str != NULL,
@@ -430,18 +447,18 @@ d_tests_sa_filter_from_string
     struct d_test_counter* _counter
 )
 {
-    bool                       result;
-    struct d_filter_operation  original_op;
-    struct d_filter_operation* parsed_op;
-    struct d_filter_chain*     original_chain;
-    struct d_filter_chain*     parsed_chain;
-    char*                      str;
+    bool                        result;
+    struct d_filter_operation*  original_op;
+    struct d_filter_operation*  parsed_op;
+    struct d_filter_chain*      original_chain;
+    struct d_filter_chain*      parsed_chain;
+    char*                       str;
 
     result = true;
 
     // test 1: round-trip for take_first operation
     original_op = d_filter_take_first(5);
-    str         = d_filter_operation_to_string(&original_op);
+    str         = d_filter_operation_to_string(original_op);
 
     if (str)
     {
@@ -476,7 +493,7 @@ d_tests_sa_filter_from_string
 
     // test 2: round-trip for range operation
     original_op = d_filter_range(2, 8);
-    str         = d_filter_operation_to_string(&original_op);
+    str         = d_filter_operation_to_string(original_op);
 
     if (str)
     {
@@ -647,8 +664,8 @@ d_tests_sa_filter_optimize
     bool                    result;
     struct d_filter_chain*  chain;
     struct d_filter_chain*  optimized;
-    struct d_filter_result  res_orig;
-    struct d_filter_result  res_opt;
+    struct d_filter_result* res_orig;
+    struct d_filter_result* res_opt;
     int                     input[6];
     int*                    orig_elems;
     int*                    opt_elems;
@@ -702,20 +719,20 @@ d_tests_sa_filter_optimize
                                         sizeof(int));
 
         result = d_assert_standalone(
-            res_orig.count == res_opt.count,
+            res_orig->count == res_opt->count,
             "optimize_same_count",
             "optimized chain should produce same element count",
             _counter) && result;
 
-        if ( (res_orig.elements) &&
-             (res_opt.elements)  &&
-             (res_orig.count == res_opt.count) )
+        if ( (res_orig->elements) &&
+             (res_opt->elements)  &&
+             (res_orig->count == res_opt->count) )
         {
-            orig_elems   = (int*)res_orig.elements;
-            opt_elems    = (int*)res_opt.elements;
+            orig_elems   = (int*)res_orig->elements;
+            opt_elems    = (int*)res_opt->elements;
             values_match = true;
 
-            for (i = 0; i < res_orig.count; i++)
+            for (i = 0; i < res_orig->count; i++)
             {
                 if (orig_elems[i] != opt_elems[i])
                 {
@@ -730,8 +747,10 @@ d_tests_sa_filter_optimize
                 _counter) && result;
         }
 
-        d_filter_result_free(&res_orig);
-        d_filter_result_free(&res_opt);
+        d_filter_result_free(res_orig);
+        free(res_orig);
+        d_filter_result_free(res_opt);
+        free(res_opt);
 
         // verify original chain not modified
         result = d_assert_standalone(
@@ -770,13 +789,15 @@ d_tests_sa_filter_optimize
                                             sizeof(int));
 
             result = d_assert_standalone(
-                res_orig.count == res_opt.count,
+                res_orig->count == res_opt->count,
                 "optimize_merge_same_count",
                 "merged chain should produce same count",
                 _counter) && result;
 
-            d_filter_result_free(&res_orig);
-            d_filter_result_free(&res_opt);
+            d_filter_result_free(res_orig);
+        free(res_orig);
+            d_filter_result_free(res_opt);
+        free(res_opt);
             d_filter_chain_free(optimized);
         }
 

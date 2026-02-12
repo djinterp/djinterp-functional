@@ -74,6 +74,7 @@ bool d_tests_sa_filter_counting(struct d_test_counter* _counter);
 bool d_tests_sa_filter_get_indices(struct d_test_counter* _counter);
 bool d_tests_sa_filter_in_place(struct d_test_counter* _counter);
 bool d_tests_sa_filter_result_free(struct d_test_counter* _counter);
+bool d_tests_sa_filter_matches_element(struct d_test_counter* _counter);
 
 // IV.  aggregation function
 bool d_tests_sa_filter_execution_all(struct d_test_counter* _counter);

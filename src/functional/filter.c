@@ -14,17 +14,24 @@ Parameter(s):
 Return:
   A d_filter_operation configured for take-first behavior.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_take_first
 (
     size_t _n
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type         = D_FILTER_OP_TAKE_FIRST;
-    op.params.count = _n;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type         = D_FILTER_OP_TAKE_FIRST;
+    op->params.count = _n;
 
     return op;
 }
@@ -38,17 +45,24 @@ Parameter(s):
 Return:
   A d_filter_operation configured for take-last behavior.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_take_last
 (
     size_t _n
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type         = D_FILTER_OP_TAKE_LAST;
-    op.params.count = _n;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type         = D_FILTER_OP_TAKE_LAST;
+    op->params.count = _n;
 
     return op;
 }
@@ -62,17 +76,24 @@ Parameter(s):
 Return:
   A d_filter_operation configured for take-nth behavior.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_take_nth
 (
     size_t _n
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type        = D_FILTER_OP_TAKE_NTH;
-    op.params.step = (_n == 0) ? 1 : _n;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type        = D_FILTER_OP_TAKE_NTH;
+    op->params.step = (_n == 0) ? 1 : _n;
 
     return op;
 }
@@ -86,17 +107,24 @@ Parameter(s):
 Return:
   A d_filter_operation configured for head behavior.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_head
 (
     void
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type         = D_FILTER_OP_HEAD;
-    op.params.count = 1;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type         = D_FILTER_OP_HEAD;
+    op->params.count = 1;
 
     return op;
 }
@@ -110,17 +138,24 @@ Parameter(s):
 Return:
   A d_filter_operation configured for tail behavior.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_tail
 (
     void
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type         = D_FILTER_OP_TAIL;
-    op.params.count = 1;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type         = D_FILTER_OP_TAIL;
+    op->params.count = 1;
 
     return op;
 }
@@ -134,17 +169,24 @@ Parameter(s):
 Return:
   A d_filter_operation configured for skip-first behavior.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_skip_first
 (
     size_t _n
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type         = D_FILTER_OP_SKIP_FIRST;
-    op.params.count = _n;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type         = D_FILTER_OP_SKIP_FIRST;
+    op->params.count = _n;
 
     return op;
 }
@@ -158,17 +200,24 @@ Parameter(s):
 Return:
   A d_filter_operation configured for skip-last behavior.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_skip_last
 (
     size_t _n
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type         = D_FILTER_OP_SKIP_LAST;
-    op.params.count = _n;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type         = D_FILTER_OP_SKIP_LAST;
+    op->params.count = _n;
 
     return op;
 }
@@ -182,16 +231,23 @@ Parameter(s):
 Return:
   A d_filter_operation configured for init behavior.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_init
 (
     void
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type = D_FILTER_OP_INIT;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type = D_FILTER_OP_INIT;
 
     return op;
 }
@@ -205,16 +261,23 @@ Parameter(s):
 Return:
   A d_filter_operation configured for rest behavior.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_rest
 (
     void
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type = D_FILTER_OP_REST;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type = D_FILTER_OP_REST;
 
     return op;
 }
@@ -230,19 +293,26 @@ Parameter(s):
 Return:
   A d_filter_operation configured for range selection.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_range
 (
     size_t _start,
     size_t _end
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type         = D_FILTER_OP_RANGE;
-    op.params.start = _start;
-    op.params.end   = _end;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type         = D_FILTER_OP_RANGE;
+    op->params.start = _start;
+    op->params.end   = _end;
 
     return op;
 }
@@ -259,7 +329,7 @@ Parameter(s):
 Return:
   A d_filter_operation configured for slice selection.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_slice
 (
     size_t _start,
@@ -267,13 +337,20 @@ d_filter_slice
     size_t _step
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type         = D_FILTER_OP_SLICE;
-    op.params.start = _start;
-    op.params.end   = _end;
-    op.params.step  = (_step == 0) ? 1 : _step;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type         = D_FILTER_OP_SLICE;
+    op->params.start = _start;
+    op->params.end   = _end;
+    op->params.step  = (_step == 0) ? 1 : _step;
 
     return op;
 }
@@ -287,24 +364,31 @@ Parameter(s):
 Return:
   A d_filter_operation configured for predicate-based filtering.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_where
 (
     fn_predicate _test
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type           = D_FILTER_OP_WHERE;
-    op.params.test    = _test;
-    op.params.context = NULL;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type           = D_FILTER_OP_WHERE;
+    op->params.test    = _test;
+    op->params.context = NULL;
 
     return op;
 }
 
 /*
-d_filter_where_ctx
+d_filter_where_context
   Creates a filter operation that selects elements matching a predicate
 with a context parameter.
 
@@ -314,19 +398,26 @@ Parameter(s):
 Return:
   A d_filter_operation configured for context-predicate filtering.
 */
-struct d_filter_operation
-d_filter_where_ctx
+struct d_filter_operation*
+d_filter_where_context
 (
     fn_predicate _test,
     void*       _context
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type           = D_FILTER_OP_WHERE;
-    op.params.test    = _test;
-    op.params.context = _context;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type           = D_FILTER_OP_WHERE;
+    op->params.test    = _test;
+    op->params.context = _context;
 
     return op;
 }
@@ -341,24 +432,31 @@ Parameter(s):
 Return:
   A d_filter_operation configured for negated predicate filtering.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_where_not
 (
     fn_predicate _test
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type           = D_FILTER_OP_WHERE_NOT;
-    op.params.test    = _test;
-    op.params.context = NULL;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type           = D_FILTER_OP_WHERE_NOT;
+    op->params.test    = _test;
+    op->params.context = NULL;
 
     return op;
 }
 
 /*
-d_filter_where_not_ctx
+d_filter_where_not_context
   Creates a filter operation that selects elements not matching a
 predicate, with a context parameter.
 
@@ -369,19 +467,26 @@ Return:
   A d_filter_operation configured for negated context-predicate
 filtering.
 */
-struct d_filter_operation
-d_filter_where_not_ctx
+struct d_filter_operation*
+d_filter_where_not_context
 (
     fn_predicate _test,
     void*       _context
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type           = D_FILTER_OP_WHERE_NOT;
-    op.params.test    = _test;
-    op.params.context = _context;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type           = D_FILTER_OP_WHERE_NOT;
+    op->params.test    = _test;
+    op->params.context = _context;
 
     return op;
 }
@@ -395,18 +500,25 @@ Parameter(s):
 Return:
   A d_filter_operation configured for single-index selection.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_at
 (
     size_t _index
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type         = D_FILTER_OP_INDICES;
-    op.params.start = _index;
-    op.params.count = 1;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type         = D_FILTER_OP_INDICES;
+    op->params.start = _index;
+    op->params.count = 1;
 
     return op;
 }
@@ -422,28 +534,35 @@ Parameter(s):
 Return:
   A d_filter_operation configured for multi-index selection.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_at_indices
 (
     const size_t* _indices,
     size_t        _count
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type                = D_FILTER_OP_INDICES;
-    op.params.indices       = NULL;
-    op.params.indices_count = _count;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type                = D_FILTER_OP_INDICES;
+    op->params.indices       = NULL;
+    op->params.indices_count = _count;
 
     if ( (_indices)  &&
          (_count > 0) )
     {
-        op.params.indices = malloc(_count * sizeof(size_t));
+        op->params.indices = malloc(_count * sizeof(size_t));
 
-        if (op.params.indices)
+        if (op->params.indices)
         {
-            memcpy(op.params.indices,
+            memcpy(op->params.indices,
                    _indices,
                    _count * sizeof(size_t));
         }
@@ -458,21 +577,30 @@ d_filter_distinct
 comparator.
 
 Parameter(s):
-  _cmp: the comparator function for detecting duplicates.
+  _comparator: the comparator function for detecting duplicates.
 Return:
   A d_filter_operation configured for deduplication.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_distinct
 (
-    fn_comparator _cmp
+    fn_function_comparator _comparator
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type              = D_FILTER_OP_DISTINCT;
-    op.params.comparator = _cmp;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    // ensure that memory allocation was successful
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+
+    op->type              = D_FILTER_OP_DISTINCT;
+    op->params.comparator = _comparator;
 
     return op;
 }
@@ -486,16 +614,23 @@ Parameter(s):
 Return:
   A d_filter_operation configured for reversal.
 */
-struct d_filter_operation
+struct d_filter_operation*
 d_filter_reverse
 (
     void
 )
 {
-    struct d_filter_operation op;
+    struct d_filter_operation* op;
 
-    memset(&op, 0, sizeof(op));
-    op.type = D_FILTER_OP_REVERSE;
+    op = malloc(sizeof(struct d_filter_operation));
+
+    if (!op)
+    {
+        return NULL;
+    }
+
+    memset(op, 0, sizeof(*op));
+    op->type = D_FILTER_OP_REVERSE;
 
     return op;
 }
@@ -729,18 +864,14 @@ Parameter(s):
 Return:
   A boolean value; true if the operation was added successfully.
 */
-bool
+D_INLINE bool
 d_filter_chain_add_take_first
 (
     struct d_filter_chain* _chain,
     size_t                 _n
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_take_first(_n);
-
-    return d_filter_chain_add(_chain, &op);
+    return d_filter_chain_add(_chain, d_filter_take_first(_n));
 }
 
 /*
@@ -753,18 +884,14 @@ Parameter(s):
 Return:
   A boolean value; true if the operation was added successfully.
 */
-bool
+D_INLINE bool
 d_filter_chain_add_take_last
 (
     struct d_filter_chain* _chain,
     size_t                 _n
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_take_last(_n);
-
-    return d_filter_chain_add(_chain, &op);
+    return d_filter_chain_add(_chain, d_filter_take_last(_n));
 }
 
 /*
@@ -777,18 +904,14 @@ Parameter(s):
 Return:
   A boolean value; true if the operation was added successfully.
 */
-bool
+D_INLINE bool
 d_filter_chain_add_skip_first
 (
     struct d_filter_chain* _chain,
     size_t                 _n
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_skip_first(_n);
-
-    return d_filter_chain_add(_chain, &op);
+    return d_filter_chain_add(_chain, d_filter_skip_first(_n));
 }
 
 /*
@@ -801,18 +924,14 @@ Parameter(s):
 Return:
   A boolean value; true if the operation was added successfully.
 */
-bool
+D_INLINE bool
 d_filter_chain_add_skip_last
 (
     struct d_filter_chain* _chain,
     size_t                 _n
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_skip_last(_n);
-
-    return d_filter_chain_add(_chain, &op);
+    return d_filter_chain_add(_chain, d_filter_skip_last(_n));
 }
 
 /*
@@ -826,7 +945,7 @@ Parameter(s):
 Return:
   A boolean value; true if the operation was added successfully.
 */
-bool
+D_INLINE bool
 d_filter_chain_add_range
 (
     struct d_filter_chain* _chain,
@@ -834,11 +953,7 @@ d_filter_chain_add_range
     size_t                 _end
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_range(_start, _end);
-
-    return d_filter_chain_add(_chain, &op);
+    return d_filter_chain_add(_chain, d_filter_range(_start, _end));
 }
 
 /*
@@ -851,22 +966,18 @@ Parameter(s):
 Return:
   A boolean value; true if the operation was added successfully.
 */
-bool
+D_INLINE bool
 d_filter_chain_add_where
 (
     struct d_filter_chain* _chain,
     fn_predicate            _test
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_where(_test);
-
-    return d_filter_chain_add(_chain, &op);
+    return d_filter_chain_add(_chain, d_filter_where(_test));
 }
 
 /*
-d_filter_chain_add_where_ctx
+d_filter_chain_add_where_context
   Convenience function to add a context-predicate operation to a chain.
 
 Parameter(s):
@@ -876,19 +987,15 @@ Parameter(s):
 Return:
   A boolean value; true if the operation was added successfully.
 */
-bool
-d_filter_chain_add_where_ctx
+D_INLINE bool
+d_filter_chain_add_where_context
 (
     struct d_filter_chain* _chain,
     fn_predicate            _test,
     void*                  _context
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_where_ctx(_test, _context);
-
-    return d_filter_chain_add(_chain, &op);
+    return d_filter_chain_add(_chain, d_filter_where_context(_test, _context));
 }
 
 /*
@@ -1677,7 +1784,7 @@ Parameter(s):
 Return:
   A d_filter_result containing the filtered elements and status.
 */
-struct d_filter_result
+struct d_filter_result*
 d_filter_apply_operation
 (
     const struct d_filter_operation* _op,
@@ -1686,17 +1793,24 @@ d_filter_apply_operation
     size_t                           _element_size
 )
 {
-    struct d_filter_result result;
-    size_t                 out_count;
-    void*                  output;
+    struct d_filter_result* result;
+    size_t                  out_count;
+    void*                   output;
 
-    memset(&result, 0, sizeof(result));
+    result = malloc(sizeof(struct d_filter_result));
+
+    if (!result)
+    {
+        return NULL;
+    }
+
+    memset(result, 0, sizeof(*result));
 
     if ( (!_op)              ||
          (!_input)           ||
          (_element_size == 0) )
     {
-        result.status = D_FILTER_RESULT_INVALID;
+        result->status = D_FILTER_RESULT_INVALID;
 
         return result;
     }
@@ -1706,16 +1820,16 @@ d_filter_apply_operation
 
     if (!output)
     {
-        result.status = D_FILTER_RESULT_ERROR;
+        result->status = D_FILTER_RESULT_ERROR;
 
         return result;
     }
 
-    result.elements = output;
-    result.count    = out_count;
-    result.status   = (out_count == 0)
-                      ? D_FILTER_RESULT_EMPTY
-                      : D_FILTER_RESULT_SUCCESS;
+    result->elements = output;
+    result->count    = out_count;
+    result->status   = (out_count == 0)
+                       ? D_FILTER_RESULT_EMPTY
+                       : D_FILTER_RESULT_SUCCESS;
 
     return result;
 }
@@ -1733,7 +1847,7 @@ Parameter(s):
 Return:
   A d_filter_result containing the final filtered elements and status.
 */
-struct d_filter_result
+struct d_filter_result*
 d_filter_apply_chain
 (
     const struct d_filter_chain* _chain,
@@ -1742,20 +1856,27 @@ d_filter_apply_chain
     size_t                       _element_size
 )
 {
-    struct d_filter_result result;
-    size_t                 i;
-    void*                  current_data;
-    size_t                 current_count;
-    void*                  next_data;
-    size_t                 next_count;
+    struct d_filter_result* result;
+    size_t                  i;
+    void*                   current_data;
+    size_t                  current_count;
+    void*                   next_data;
+    size_t                  next_count;
 
-    memset(&result, 0, sizeof(result));
+    result = malloc(sizeof(struct d_filter_result));
+
+    if (!result)
+    {
+        return NULL;
+    }
+
+    memset(result, 0, sizeof(*result));
 
     if ( (!_chain)           ||
          (!_input)           ||
          (_element_size == 0) )
     {
-        result.status = D_FILTER_RESULT_INVALID;
+        result->status = D_FILTER_RESULT_INVALID;
 
         return result;
     }
@@ -1763,18 +1884,18 @@ d_filter_apply_chain
     // empty chain returns a copy of the input
     if (_chain->count == 0)
     {
-        result.elements = malloc(_count * _element_size);
+        result->elements = malloc(_count * _element_size);
 
-        if (!result.elements)
+        if (!result->elements)
         {
-            result.status = D_FILTER_RESULT_NO_MEMORY;
+            result->status = D_FILTER_RESULT_NO_MEMORY;
 
             return result;
         }
 
-        memcpy(result.elements, _input, _count * _element_size);
-        result.count  = _count;
-        result.status = D_FILTER_RESULT_SUCCESS;
+        memcpy(result->elements, _input, _count * _element_size);
+        result->count  = _count;
+        result->status = D_FILTER_RESULT_SUCCESS;
 
         return result;
     }
@@ -1784,7 +1905,7 @@ d_filter_apply_chain
 
     if (!current_data)
     {
-        result.status = D_FILTER_RESULT_NO_MEMORY;
+        result->status = D_FILTER_RESULT_NO_MEMORY;
 
         return result;
     }
@@ -1805,7 +1926,7 @@ d_filter_apply_chain
 
         if (!next_data)
         {
-            result.status = D_FILTER_RESULT_ERROR;
+            result->status = D_FILTER_RESULT_ERROR;
 
             return result;
         }
@@ -1814,11 +1935,11 @@ d_filter_apply_chain
         current_count = next_count;
     }
 
-    result.elements = current_data;
-    result.count    = current_count;
-    result.status   = (current_count == 0)
-                      ? D_FILTER_RESULT_EMPTY
-                      : D_FILTER_RESULT_SUCCESS;
+    result->elements = current_data;
+    result->count    = current_count;
+    result->status   = (current_count == 0)
+                       ? D_FILTER_RESULT_EMPTY
+                       : D_FILTER_RESULT_SUCCESS;
 
     return result;
 }
@@ -1845,8 +1966,8 @@ d_filter_apply_in_place
     size_t                       _element_size
 )
 {
-    struct d_filter_result result;
-    size_t                 new_count;
+    struct d_filter_result* result;
+    size_t                  new_count;
 
     if ( (!_chain)           ||
          (!_data)            ||
@@ -1858,25 +1979,147 @@ d_filter_apply_in_place
     result = d_filter_apply_chain(
                  _chain, _data, _count, _element_size);
 
-    if (result.status != D_FILTER_RESULT_SUCCESS &&
-        result.status != D_FILTER_RESULT_EMPTY)
+    if (!result)
     {
-        d_filter_result_free(&result);
+        return 0;
+    }
+
+    if (result->status != D_FILTER_RESULT_SUCCESS &&
+        result->status != D_FILTER_RESULT_EMPTY)
+    {
+        d_filter_result_free(result);
+        free(result);
 
         return 0;
     }
 
-    new_count = result.count;
+    new_count = result->count;
 
     if (new_count > 0)
     {
-        memcpy(_data, result.elements,
+        memcpy(_data, result->elements,
                new_count * _element_size);
     }
 
-    d_filter_result_free(&result);
+    d_filter_result_free(result);
+    free(result);
 
     return new_count;
+}
+
+/*
+d_filter_chain_matches_element
+  Tests whether a single element passes a filter chain. Intended for
+per-element evaluation in contexts where the caller iterates manually
+(e.g. buffer_common filtering across non-contiguous storage).
+
+For chains containing only predicate operations (WHERE / WHERE_NOT),
+the predicates are evaluated directly without allocation. For chains
+that also contain positional or structural operations, the element is
+wrapped in a 1-element array and evaluated through d_filter_apply_chain.
+
+Parameter(s):
+  _chain:        the filter chain to test against.
+  _element:      pointer to the element to test.
+  _element_size: the size in bytes of the element.
+Return:
+  true if the element survives the entire chain, false otherwise.
+*/
+bool
+d_filter_chain_matches_element
+(
+    const struct d_filter_chain* _chain,
+    const void*                  _element,
+    size_t                       _element_size
+)
+{
+    size_t                           i;
+    const struct d_filter_operation* op;
+    bool                             matches;
+    bool                             all_predicates;
+    struct d_filter_result*          result;
+
+    if ( (!_chain)          ||
+         (!_element)        ||
+         (_element_size == 0) )
+    {
+        return false;
+    }
+
+    // empty chain matches everything
+    if (_chain->count == 0)
+    {
+        return true;
+    }
+
+    // fast path: if every operation is a predicate (WHERE / WHERE_NOT),
+    // evaluate directly without allocation
+    all_predicates = true;
+
+    for (i = 0; i < _chain->count; i++)
+    {
+        if ( (_chain->operations[i].type != D_FILTER_OP_WHERE) &&
+             (_chain->operations[i].type != D_FILTER_OP_WHERE_NOT) )
+        {
+            all_predicates = false;
+
+            break;
+        }
+    }
+
+    if (all_predicates)
+    {
+        for (i = 0; i < _chain->count; i++)
+        {
+            op = &_chain->operations[i];
+
+            if (!op->params.test)
+            {
+                return false;
+            }
+
+            matches = op->params.test(_element, op->params.context);
+
+            if (op->type == D_FILTER_OP_WHERE_NOT)
+            {
+                matches = !matches;
+            }
+
+            if (!matches)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // general path: wrap in 1-element array and apply chain
+    result = d_filter_apply_chain(_chain,
+                                  _element,
+                                  1,
+                                  _element_size);
+
+    if (!result)
+    {
+        return false;
+    }
+
+    if ( (result->status != D_FILTER_RESULT_SUCCESS) &&
+         (result->status != D_FILTER_RESULT_EMPTY) )
+    {
+        d_filter_result_free(result);
+        free(result);
+
+        return false;
+    }
+
+    matches = (result->count == 1);
+
+    d_filter_result_free(result);
+    free(result);
+
+    return matches;
 }
 
 /*
@@ -2217,7 +2460,7 @@ Parameter(s):
 Return:
   A d_filter_result containing the union of all filter results.
 */
-struct d_filter_result
+struct d_filter_result*
 d_filter_apply_union
 (
     const struct d_filter_union* _union,
@@ -2226,24 +2469,31 @@ d_filter_apply_union
     size_t                       _element_size
 )
 {
-    struct d_filter_result result;
-    struct d_filter_result sub_result;
-    bool*                  included;
-    size_t                 i;
-    size_t                 j;
-    size_t                 k;
-    size_t                 out_count;
-    char*                  out_bytes;
-    const char*            in_bytes;
-    const char*            res_bytes;
+    struct d_filter_result* result;
+    struct d_filter_result* sub_result;
+    bool*                   included;
+    size_t                  i;
+    size_t                  j;
+    size_t                  k;
+    size_t                  out_count;
+    char*                   out_bytes;
+    const char*             in_bytes;
+    const char*             res_bytes;
 
-    memset(&result, 0, sizeof(result));
+    result = malloc(sizeof(struct d_filter_result));
+
+    if (!result)
+    {
+        return NULL;
+    }
+
+    memset(result, 0, sizeof(*result));
 
     if ( (!_union)           ||
          (!_input)           ||
          (_element_size == 0) )
     {
-        result.status = D_FILTER_RESULT_INVALID;
+        result->status = D_FILTER_RESULT_INVALID;
 
         return result;
     }
@@ -2252,7 +2502,7 @@ d_filter_apply_union
 
     if (!included)
     {
-        result.status = D_FILTER_RESULT_NO_MEMORY;
+        result->status = D_FILTER_RESULT_NO_MEMORY;
 
         return result;
     }
@@ -2266,18 +2516,20 @@ d_filter_apply_union
                          _union->filters[i],
                          _input, _count, _element_size);
 
-        if (sub_result.status != D_FILTER_RESULT_SUCCESS &&
-            sub_result.status != D_FILTER_RESULT_EMPTY)
+        if ( (!sub_result) ||
+             (sub_result->status != D_FILTER_RESULT_SUCCESS &&
+              sub_result->status != D_FILTER_RESULT_EMPTY) )
         {
-            d_filter_result_free(&sub_result);
+            d_filter_result_free(sub_result);
+            free(sub_result);
 
             continue;
         }
 
         // match result elements back to input by byte comparison
-        res_bytes = (const char*)sub_result.elements;
+        res_bytes = (const char*)sub_result->elements;
 
-        for (j = 0; j < sub_result.count; j++)
+        for (j = 0; j < sub_result->count; j++)
         {
             for (k = 0; k < _count; k++)
             {
@@ -2294,7 +2546,8 @@ d_filter_apply_union
             }
         }
 
-        d_filter_result_free(&sub_result);
+        d_filter_result_free(sub_result);
+        free(sub_result);
     }
 
     // count and build result
@@ -2311,23 +2564,23 @@ d_filter_apply_union
     if (out_count == 0)
     {
         free(included);
-        result.status = D_FILTER_RESULT_EMPTY;
-        result.elements = malloc(_element_size);
+        result->status = D_FILTER_RESULT_EMPTY;
+        result->elements = malloc(_element_size);
 
         return result;
     }
 
-    result.elements = malloc(out_count * _element_size);
+    result->elements = malloc(out_count * _element_size);
 
-    if (!result.elements)
+    if (!result->elements)
     {
         free(included);
-        result.status = D_FILTER_RESULT_NO_MEMORY;
+        result->status = D_FILTER_RESULT_NO_MEMORY;
 
         return result;
     }
 
-    out_bytes = (char*)result.elements;
+    out_bytes = (char*)result->elements;
     out_count = 0;
 
     for (i = 0; i < _count; i++)
@@ -2341,8 +2594,8 @@ d_filter_apply_union
         }
     }
 
-    result.count  = out_count;
-    result.status = D_FILTER_RESULT_SUCCESS;
+    result->count  = out_count;
+    result->status = D_FILTER_RESULT_SUCCESS;
 
     free(included);
 
@@ -2363,7 +2616,7 @@ Parameter(s):
 Return:
   A d_filter_result containing the intersection of all filter results.
 */
-struct d_filter_result
+struct d_filter_result*
 d_filter_apply_intersection
 (
     const struct d_filter_intersection* _inter,
@@ -2372,19 +2625,26 @@ d_filter_apply_intersection
     size_t                              _element_size
 )
 {
-    struct d_filter_result result;
-    struct d_filter_result sub_result;
-    void*                  current_data;
-    size_t                 current_count;
-    size_t                 i;
+    struct d_filter_result* result;
+    struct d_filter_result* sub_result;
+    void*                   current_data;
+    size_t                  current_count;
+    size_t                  i;
 
-    memset(&result, 0, sizeof(result));
+    result = malloc(sizeof(struct d_filter_result));
+
+    if (!result)
+    {
+        return NULL;
+    }
+
+    memset(result, 0, sizeof(*result));
 
     if ( (!_inter)           ||
          (!_input)           ||
          (_element_size == 0) )
     {
-        result.status = D_FILTER_RESULT_INVALID;
+        result->status = D_FILTER_RESULT_INVALID;
 
         return result;
     }
@@ -2394,7 +2654,7 @@ d_filter_apply_intersection
 
     if (!current_data)
     {
-        result.status = D_FILTER_RESULT_NO_MEMORY;
+        result->status = D_FILTER_RESULT_NO_MEMORY;
 
         return result;
     }
@@ -2412,22 +2672,25 @@ d_filter_apply_intersection
                          _element_size);
         free(current_data);
 
-        if (sub_result.status != D_FILTER_RESULT_SUCCESS &&
-            sub_result.status != D_FILTER_RESULT_EMPTY)
+        if ( (!sub_result) ||
+             (sub_result->status != D_FILTER_RESULT_SUCCESS &&
+              sub_result->status != D_FILTER_RESULT_EMPTY) )
         {
-            d_filter_result_free(&sub_result);
-            result.status = D_FILTER_RESULT_ERROR;
+            d_filter_result_free(sub_result);
+            free(sub_result);
+            result->status = D_FILTER_RESULT_ERROR;
 
             return result;
         }
 
-        current_data  = sub_result.elements;
-        current_count = sub_result.count;
+        current_data  = sub_result->elements;
+        current_count = sub_result->count;
 
         // detach from sub_result so we don't double-free
-        sub_result.elements = NULL;
-        sub_result.count    = 0;
-        d_filter_result_free(&sub_result);
+        sub_result->elements = NULL;
+        sub_result->count    = 0;
+        d_filter_result_free(sub_result);
+        free(sub_result);
 
         // early exit if empty
         if (current_count == 0)
@@ -2436,11 +2699,11 @@ d_filter_apply_intersection
         }
     }
 
-    result.elements = current_data;
-    result.count    = current_count;
-    result.status   = (current_count == 0)
-                      ? D_FILTER_RESULT_EMPTY
-                      : D_FILTER_RESULT_SUCCESS;
+    result->elements = current_data;
+    result->count    = current_count;
+    result->status   = (current_count == 0)
+                       ? D_FILTER_RESULT_EMPTY
+                       : D_FILTER_RESULT_SUCCESS;
 
     return result;
 }
@@ -2459,7 +2722,7 @@ Parameter(s):
 Return:
   A d_filter_result containing elements in include but not in exclude.
 */
-struct d_filter_result
+struct d_filter_result*
 d_filter_apply_difference
 (
     const struct d_filter_difference* _diff,
@@ -2468,24 +2731,31 @@ d_filter_apply_difference
     size_t                            _element_size
 )
 {
-    struct d_filter_result result;
-    struct d_filter_result include_result;
-    struct d_filter_result exclude_result;
-    size_t                 i;
-    size_t                 j;
-    size_t                 out_count;
-    char*                  out_bytes;
-    const char*            inc_bytes;
-    const char*            exc_bytes;
-    bool                   excluded;
+    struct d_filter_result*  result;
+    struct d_filter_result* include_result;
+    struct d_filter_result* exclude_result;
+    size_t                  i;
+    size_t                  j;
+    size_t                  out_count;
+    char*                   out_bytes;
+    const char*             inc_bytes;
+    const char*             exc_bytes;
+    bool                    excluded;
 
-    memset(&result, 0, sizeof(result));
+    result = malloc(sizeof(struct d_filter_result));
+
+    if (!result)
+    {
+        return NULL;
+    }
+
+    memset(result, 0, sizeof(*result));
 
     if ( (!_diff)  ||
          (!_input) ||
          (_element_size == 0) )
     {
-        result.status = D_FILTER_RESULT_INVALID;
+        result->status = D_FILTER_RESULT_INVALID;
 
         return result;
     }
@@ -2496,19 +2766,24 @@ d_filter_apply_difference
                                           _count,
                                           _element_size);
 
-    if ( (include_result.status != D_FILTER_RESULT_SUCCESS) &&
-         (include_result.status != D_FILTER_RESULT_EMPTY) )
+    if ( (!include_result) ||
+         ((include_result->status != D_FILTER_RESULT_SUCCESS) &&
+          (include_result->status != D_FILTER_RESULT_EMPTY)) )
     {
-        d_filter_result_free(&include_result);
-        result.status = D_FILTER_RESULT_ERROR;
+        d_filter_result_free(include_result);
+        free(include_result);
+        result->status = D_FILTER_RESULT_ERROR;
 
         return result;
     }
 
-    if (include_result.count == 0)
+    if (include_result->count == 0)
     {
-        result.status = D_FILTER_RESULT_EMPTY;
-        result.elements = include_result.elements;
+        result->status   = D_FILTER_RESULT_EMPTY;
+        result->elements = include_result->elements;
+        include_result->elements = NULL;
+        d_filter_result_free(include_result);
+        free(include_result);
 
         return result;
     }
@@ -2519,38 +2794,50 @@ d_filter_apply_difference
                                           _count,
                                           _element_size);
 
-    if ( (exclude_result.status != D_FILTER_RESULT_SUCCESS) &&
-         (exclude_result.status != D_FILTER_RESULT_EMPTY) )
+    if ( (!exclude_result) ||
+         ((exclude_result->status != D_FILTER_RESULT_SUCCESS) &&
+          (exclude_result->status != D_FILTER_RESULT_EMPTY)) )
     {
         // exclude failed — return include result as-is
-        d_filter_result_free(&exclude_result);
+        d_filter_result_free(exclude_result);
+        free(exclude_result);
 
-        return include_result;
-    }
-
-    // subtract: keep include elements not in exclude
-    result.elements = malloc(
-        include_result.count * _element_size);
-
-    if (!result.elements)
-    {
-        d_filter_result_free(&include_result);
-        d_filter_result_free(&exclude_result);
-        result.status = D_FILTER_RESULT_NO_MEMORY;
+        // transfer include_result contents to result
+        result->elements = include_result->elements;
+        result->count    = include_result->count;
+        result->status   = include_result->status;
+        include_result->elements = NULL;
+        d_filter_result_free(include_result);
+        free(include_result);
 
         return result;
     }
 
-    out_bytes = (char*)result.elements;
-    inc_bytes = (const char*)include_result.elements;
-    exc_bytes = (const char*)exclude_result.elements;
+    // subtract: keep include elements not in exclude
+    result->elements = malloc(
+        include_result->count * _element_size);
+
+    if (!result->elements)
+    {
+        d_filter_result_free(include_result);
+        free(include_result);
+        d_filter_result_free(exclude_result);
+        free(exclude_result);
+        result->status = D_FILTER_RESULT_NO_MEMORY;
+
+        return result;
+    }
+
+    out_bytes = (char*)result->elements;
+    inc_bytes = (const char*)include_result->elements;
+    exc_bytes = (const char*)exclude_result->elements;
     out_count = 0;
 
-    for (i = 0; i < include_result.count; i++)
+    for (i = 0; i < include_result->count; i++)
     {
         excluded = false;
 
-        for (j = 0; j < exclude_result.count; j++)
+        for (j = 0; j < exclude_result->count; j++)
         {
             if (memcmp(inc_bytes + (i * _element_size),
                        exc_bytes + (j * _element_size),
@@ -2572,13 +2859,15 @@ d_filter_apply_difference
         }
     }
 
-    d_filter_result_free(&include_result);
-    d_filter_result_free(&exclude_result);
+    d_filter_result_free(include_result);
+    free(include_result);
+    d_filter_result_free(exclude_result);
+    free(exclude_result);
 
-    result.count  = out_count;
-    result.status = (out_count == 0)
-                    ? D_FILTER_RESULT_EMPTY
-                    : D_FILTER_RESULT_SUCCESS;
+    result->count  = out_count;
+    result->status = (out_count == 0)
+                     ? D_FILTER_RESULT_EMPTY
+                     : D_FILTER_RESULT_SUCCESS;
 
     return result;
 }
@@ -2609,7 +2898,7 @@ d_filter_count_matches
     size_t                       _element_size
 )
 {
-    struct d_filter_result result;
+    struct d_filter_result* result;
     size_t                 match_count;
 
     result = d_filter_apply_chain(_chain, 
@@ -2617,17 +2906,20 @@ d_filter_count_matches
                                   _count,
                                   _element_size);
 
-    if ( (result.status != D_FILTER_RESULT_SUCCESS) &&
-         (result.status != D_FILTER_RESULT_EMPTY) )
+    if ( (!result) ||
+         ((result->status != D_FILTER_RESULT_SUCCESS) &&
+          (result->status != D_FILTER_RESULT_EMPTY)) )
     {
-        d_filter_result_free(&result);
+        d_filter_result_free(result);
+        free(result);
 
         return 0;
     }
 
-    match_count = result.count;
+    match_count = result->count;
 
-    d_filter_result_free(&result);
+    d_filter_result_free(result);
+    free(result);
 
     return match_count;
 }
@@ -2739,7 +3031,7 @@ d_filter_get_indices
     size_t*                      _out_count
 )
 {
-    struct d_filter_result result;
+    struct d_filter_result* result;
     size_t*                indices;
     size_t                 idx_count;
     size_t                 i;
@@ -2757,22 +3049,25 @@ d_filter_get_indices
 
     result = d_filter_apply_chain(_chain, _input, _count, _element_size);
 
-    if (result.status != D_FILTER_RESULT_SUCCESS &&
-        result.status != D_FILTER_RESULT_EMPTY)
+    if ( (!result) ||
+         (result->status != D_FILTER_RESULT_SUCCESS &&
+          result->status != D_FILTER_RESULT_EMPTY) )
     {
-        d_filter_result_free(&result);
+        d_filter_result_free(result);
+        free(result);
 
         return NULL;
     }
 
-    if (result.count == 0)
+    if (result->count == 0)
     {
-        d_filter_result_free(&result);
+        d_filter_result_free(result);
+        free(result);
 
         return NULL;
     }
 
-    indices = malloc(result.count * sizeof(size_t));
+    indices = malloc(result->count * sizeof(size_t));
     used    = calloc(_count, sizeof(bool));
 
     if ( (!indices) ||
@@ -2781,16 +3076,17 @@ d_filter_get_indices
         free(indices);
         free(used);
 
-        d_filter_result_free(&result);
+        d_filter_result_free(result);
+        free(result);
 
         return NULL;
     }
 
     in_bytes  = (const char*)_input;
-    res_bytes = (const char*)result.elements;
+    res_bytes = (const char*)result->elements;
     idx_count = 0;
 
-    for (i = 0; i < result.count; i++)
+    for (i = 0; i < result->count; i++)
     {
         for (k = 0; k < _count; k++)
         {
@@ -2809,7 +3105,8 @@ d_filter_get_indices
     }
 
     free(used);
-    d_filter_result_free(&result);
+    d_filter_result_free(result);
+    free(result);
 
     *(_out_count) = idx_count;
 
@@ -3144,6 +3441,7 @@ d_filter_operation_from_string
 
     op = malloc(sizeof(struct d_filter_operation));
 
+    // ensure that memory allocation was successful
     if (!op)
     {
         return NULL;
@@ -3154,84 +3452,84 @@ d_filter_operation_from_string
     // parse known formats
     if (d_sscanf_s(_str, "take_first(%zu)", &n) == 1)
     {
-        *(op) = d_filter_take_first(n);
+        op = d_filter_take_first(n);
 
         return op;
     }
 
     if (d_sscanf_s(_str, "take_last(%zu)", &n) == 1)
     {
-        *(op) = d_filter_take_last(n);
+        op = d_filter_take_last(n);
 
         return op;
     }
 
     if (d_sscanf_s(_str, "skip_first(%zu)", &n) == 1)
     {
-        *(op) = d_filter_skip_first(n);
+        op = d_filter_skip_first(n);
 
         return op;
     }
 
     if (d_sscanf_s(_str, "skip_last(%zu)", &n) == 1)
     {
-        *(op) = d_filter_skip_last(n);
+        op = d_filter_skip_last(n);
 
         return op;
     }
 
     if (d_sscanf_s(_str, "take_nth(%zu)", &n) == 1)
     {
-        *(op) = d_filter_take_nth(n);
+        op = d_filter_take_nth(n);
 
         return op;
     }
 
     if (d_sscanf_s(_str, "range(%zu, %zu)", &s, &e) == 2)
     {
-        *(op) = d_filter_range(s, e);
+        op = d_filter_range(s, e);
 
         return op;
     }
 
     if (d_sscanf_s(_str, "slice(%zu, %zu, %zu)", &s, &e, &step) == 3)
     {
-        *(op) = d_filter_slice(s, e, step);
+        op = d_filter_slice(s, e, step);
 
         return op;
     }
 
     if (strcmp(_str, "head") == 0)
     {
-        *(op) = d_filter_head();
+        op = d_filter_head();
 
         return op;
     }
 
     if (strcmp(_str, "tail") == 0)
     {
-        *(op) = d_filter_tail();
+        op = d_filter_tail();
 
         return op;
     }
 
     if (strcmp(_str, "init") == 0)
     {
-        *(op) = d_filter_init();
+        op = d_filter_init();
 
         return op;
     }
 
     if (strcmp(_str, "rest") == 0)
     {
-        *(op) = d_filter_rest();
+        op = d_filter_rest();
 
         return op;
     }
 
     if (strcmp(_str, "reverse") == 0)
     {
-        *(op) = d_filter_reverse();
+        op = d_filter_reverse();
 
         return op;
     }
@@ -3827,18 +4125,14 @@ Parameter(s):
 Return:
   The builder pointer for chaining.
 */
-struct d_filter_builder*
+D_INLINE struct d_filter_builder*
 d_filter_builder_take_first
 (
     struct d_filter_builder* _builder,
     size_t                   _n
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_take_first(_n);
-
-    return d_filter_builder_add_op_internal(_builder, &op);
+    return d_filter_builder_add_op_internal(_builder, d_filter_take_first(_n));
 }
 
 /*
@@ -3851,18 +4145,14 @@ Parameter(s):
 Return:
   The builder pointer for chaining.
 */
-struct d_filter_builder*
+D_INLINE struct d_filter_builder*
 d_filter_builder_take_last
 (
     struct d_filter_builder* _builder,
     size_t                   _n
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_take_last(_n);
-
-    return d_filter_builder_add_op_internal(_builder, &op);
+    return d_filter_builder_add_op_internal(_builder, d_filter_take_last(_n));
 }
 
 /*
@@ -3875,18 +4165,14 @@ Parameter(s):
 Return:
   The builder pointer for chaining.
 */
-struct d_filter_builder*
+D_INLINE struct d_filter_builder*
 d_filter_builder_take_nth
 (
     struct d_filter_builder* _builder,
     size_t                   _n
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_take_nth(_n);
-
-    return d_filter_builder_add_op_internal(_builder, &op);
+    return d_filter_builder_add_op_internal(_builder, d_filter_take_nth(_n));
 }
 
 /*
@@ -3899,18 +4185,14 @@ Parameter(s):
 Return:
   The builder pointer for chaining.
 */
-struct d_filter_builder*
+D_INLINE struct d_filter_builder*
 d_filter_builder_skip_first
 (
     struct d_filter_builder* _builder,
     size_t                   _n
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_skip_first(_n);
-
-    return d_filter_builder_add_op_internal(_builder, &op);
+    return d_filter_builder_add_op_internal(_builder, d_filter_skip_first(_n));
 }
 
 /*
@@ -3923,18 +4205,14 @@ Parameter(s):
 Return:
   The builder pointer for chaining.
 */
-struct d_filter_builder*
+D_INLINE struct d_filter_builder*
 d_filter_builder_skip_last
 (
     struct d_filter_builder* _builder,
     size_t                   _n
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_skip_last(_n);
-
-    return d_filter_builder_add_op_internal(_builder, &op);
+    return d_filter_builder_add_op_internal(_builder, d_filter_skip_last(_n));
 }
 
 /*
@@ -3947,22 +4225,18 @@ Parameter(s):
 Return:
   The builder pointer for chaining.
 */
-struct d_filter_builder*
+D_INLINE struct d_filter_builder*
 d_filter_builder_where
 (
     struct d_filter_builder* _builder,
     fn_predicate              _test
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_where(_test);
-
-    return d_filter_builder_add_op_internal(_builder, &op);
+    return d_filter_builder_add_op_internal(_builder, d_filter_where(_test));
 }
 
 /*
-d_filter_builder_where_ctx
+d_filter_builder_where_context
   Adds a context-predicate operation to the builder.
 
 Parameter(s):
@@ -3972,19 +4246,15 @@ Parameter(s):
 Return:
   The builder pointer for chaining.
 */
-struct d_filter_builder*
-d_filter_builder_where_ctx
+D_INLINE struct d_filter_builder*
+d_filter_builder_where_context
 (
     struct d_filter_builder* _builder,
     fn_predicate              _test,
     void*                    _context
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_where_ctx(_test, _context);
-
-    return d_filter_builder_add_op_internal(_builder, &op);
+    return d_filter_builder_add_op_internal(_builder, d_filter_where_context(_test, _context));
 }
 
 /*
@@ -3997,18 +4267,14 @@ Parameter(s):
 Return:
   The builder pointer for chaining.
 */
-struct d_filter_builder*
+D_INLINE struct d_filter_builder*
 d_filter_builder_where_not
 (
     struct d_filter_builder* _builder,
     fn_predicate              _test
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_where_not(_test);
-
-    return d_filter_builder_add_op_internal(_builder, &op);
+    return d_filter_builder_add_op_internal(_builder, d_filter_where_not(_test));
 }
 
 /*
@@ -4022,7 +4288,7 @@ Parameter(s):
 Return:
   The builder pointer for chaining.
 */
-struct d_filter_builder*
+D_INLINE struct d_filter_builder*
 d_filter_builder_range
 (
     struct d_filter_builder* _builder,
@@ -4030,11 +4296,7 @@ d_filter_builder_range
     size_t                   _end
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_range(_start, _end);
-
-    return d_filter_builder_add_op_internal(_builder, &op);
+    return d_filter_builder_add_op_internal(_builder, d_filter_range(_start, _end));
 }
 
 /*
@@ -4049,7 +4311,8 @@ Parameter(s):
 Return:
   The builder pointer for chaining.
 */
-struct d_filter_builder*
+
+D_INLINE struct d_filter_builder*
 d_filter_builder_slice
 (
     struct d_filter_builder* _builder,
@@ -4058,11 +4321,7 @@ d_filter_builder_slice
     size_t                   _step
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_slice(_start, _end, _step);
-
-    return d_filter_builder_add_op_internal(_builder, &op);
+    return d_filter_builder_add_op_internal(_builder, d_filter_slice(_start, _end, _step));
 }
 
 /*
@@ -4075,18 +4334,14 @@ Parameter(s):
 Return:
   The builder pointer for chaining.
 */
-struct d_filter_builder*
+D_INLINE struct d_filter_builder*
 d_filter_builder_distinct
 (
     struct d_filter_builder* _builder,
-    fn_comparator             _cmp
+    fn_function_comparator   _comparator
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_distinct(_cmp);
-
-    return d_filter_builder_add_op_internal(_builder, &op);
+    return d_filter_builder_add_op_internal(_builder, d_filter_distinct(_comparator));
 }
 
 /*
@@ -4098,17 +4353,13 @@ Parameter(s):
 Return:
   The builder pointer for chaining.
 */
-struct d_filter_builder*
+D_INLINE struct d_filter_builder*
 d_filter_builder_reverse
 (
     struct d_filter_builder* _builder
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_reverse();
-
-    return d_filter_builder_add_op_internal(_builder, &op);
+    return d_filter_builder_add_op_internal(_builder, d_filter_reverse());
 }
 
 /*
@@ -4121,18 +4372,14 @@ Parameter(s):
 Return:
   The builder pointer for chaining.
 */
-struct d_filter_builder*
+D_INLINE struct d_filter_builder*
 d_filter_builder_at
 (
     struct d_filter_builder* _builder,
     size_t                   _index
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_at(_index);
-
-    return d_filter_builder_add_op_internal(_builder, &op);
+    return d_filter_builder_add_op_internal(_builder, d_filter_at(_index));
 }
 
 /*
@@ -4146,7 +4393,7 @@ Parameter(s):
 Return:
   The builder pointer for chaining.
 */
-struct d_filter_builder*
+D_INLINE struct d_filter_builder*
 d_filter_builder_at_indices
 (
     struct d_filter_builder* _builder,
@@ -4154,11 +4401,7 @@ d_filter_builder_at_indices
     size_t                   _n
 )
 {
-    struct d_filter_operation op;
-
-    op = d_filter_at_indices(_indices, _n);
-
-    return d_filter_builder_add_op_internal(_builder, &op);
+    return d_filter_builder_add_op_internal(_builder, d_filter_at_indices(_indices, _n));
 }
 
 /*
@@ -4202,7 +4445,7 @@ Parameter(s):
 Return:
   A d_filter_result containing the filtered output.
 */
-struct d_filter_result
+struct d_filter_result*
 d_filter_builder_apply
 (
     struct d_filter_builder* _builder,
@@ -4211,20 +4454,45 @@ d_filter_builder_apply
     size_t                   _element_size
 )
 {
-    struct d_filter_result result;
+    struct d_filter_result* result;
 
-    memset(&result, 0, sizeof(result));
+    result = malloc(sizeof(struct d_filter_result));
+
+    if (!result)
+    {
+        return NULL;
+    }
+
+    memset(result, 0, sizeof(*result));
 
     if ( (!_builder) ||
          (!_builder->chain) )
     {
-        result.status = D_FILTER_RESULT_INVALID;
+        result->status = D_FILTER_RESULT_INVALID;
 
         return result;
     }
 
-    result = d_filter_apply_chain(
-                 _builder->chain, _input, _count, _element_size);
+    // delegate to apply_chain which returns a pointer
+    {
+        struct d_filter_result* chain_result;
+
+        chain_result = d_filter_apply_chain(
+                           _builder->chain,
+                           _input, _count, _element_size);
+
+        if (!chain_result)
+        {
+            result->status = D_FILTER_RESULT_ERROR;
+
+            return result;
+        }
+
+        // transfer ownership
+        *(result) = *(chain_result);
+
+        free(chain_result);
+    }
 
     return result;
 }

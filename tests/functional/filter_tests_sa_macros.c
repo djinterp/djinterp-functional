@@ -72,8 +72,8 @@ d_tests_sa_filter_macros_single
 )
 {
     bool                      result;
-    struct d_filter_operation op;
-    struct d_filter_result    res;
+    struct d_filter_operation* op;
+    struct d_filter_result*   res;
     struct d_filter_chain*    chain;
     int                       input[6];
     int*                      elems;
@@ -91,21 +91,21 @@ d_tests_sa_filter_macros_single
     res = D_FILTER(input, 6, sizeof(int), op);
 
     result = d_assert_standalone(
-        res.status == D_FILTER_RESULT_SUCCESS,
+        res->status == D_FILTER_RESULT_SUCCESS,
         "macro_d_filter_status",
         "D_FILTER should return SUCCESS",
         _counter) && result;
 
     result = d_assert_standalone(
-        res.count == 3,
+        res->count == 3,
         "macro_d_filter_count",
         "D_FILTER with take_first(3) should produce 3",
         _counter) && result;
 
-    if ( (res.elements) &&
-         (res.count == 3) )
+    if ( (res->elements) &&
+         (res->count == 3) )
     {
-        elems  = (int*)res.elements;
+        elems  = (int*)res->elements;
         result = d_assert_standalone(
             (elems[0] == 10) &&
             (elems[1] == 20) &&
@@ -115,21 +115,22 @@ d_tests_sa_filter_macros_single
             _counter) && result;
     }
 
-    d_filter_result_free(&res);
+    d_filter_result_free(res);
+    free(res);
 
     // test 2: D_FILTER_FIRST_N returns first N
     res = D_FILTER_FIRST_N(input, 6, sizeof(int), 2);
 
     result = d_assert_standalone(
-        res.count == 2,
+        res->count == 2,
         "macro_first_n_count",
         "D_FILTER_FIRST_N(2) should produce 2",
         _counter) && result;
 
-    if ( (res.elements) &&
-         (res.count == 2) )
+    if ( (res->elements) &&
+         (res->count == 2) )
     {
-        elems  = (int*)res.elements;
+        elems  = (int*)res->elements;
         result = d_assert_standalone(
             (elems[0] == 10) &&
             (elems[1] == 20),
@@ -138,32 +139,34 @@ d_tests_sa_filter_macros_single
             _counter) && result;
     }
 
-    d_filter_result_free(&res);
+    d_filter_result_free(res);
+    free(res);
 
     // test 3: D_FILTER_FIRST_N with N > count
     res = D_FILTER_FIRST_N(input, 6, sizeof(int), 100);
 
     result = d_assert_standalone(
-        res.count == 6,
+        res->count == 6,
         "macro_first_n_clamp",
         "D_FILTER_FIRST_N(100) on 6 should return 6",
         _counter) && result;
 
-    d_filter_result_free(&res);
+    d_filter_result_free(res);
+    free(res);
 
     // test 4: D_FILTER_LAST_N returns last N
     res = D_FILTER_LAST_N(input, 6, sizeof(int), 2);
 
     result = d_assert_standalone(
-        res.count == 2,
+        res->count == 2,
         "macro_last_n_count",
         "D_FILTER_LAST_N(2) should produce 2",
         _counter) && result;
 
-    if ( (res.elements) &&
-         (res.count == 2) )
+    if ( (res->elements) &&
+         (res->count == 2) )
     {
-        elems  = (int*)res.elements;
+        elems  = (int*)res->elements;
         result = d_assert_standalone(
             (elems[0] == 50) &&
             (elems[1] == 60),
@@ -172,30 +175,33 @@ d_tests_sa_filter_macros_single
             _counter) && result;
     }
 
-    d_filter_result_free(&res);
+    d_filter_result_free(res);
+    free(res);
 
     // test 5: D_FILTER_LAST_N with N > count
     res = D_FILTER_LAST_N(input, 6, sizeof(int), 100);
 
     result = d_assert_standalone(
-        res.count == 6,
+        res->count == 6,
         "macro_last_n_clamp",
         "D_FILTER_LAST_N(100) on 6 should return 6",
         _counter) && result;
 
-    d_filter_result_free(&res);
+    d_filter_result_free(res);
+    free(res);
 
     // test 6: D_FILTER_WHERE filters correctly
     // all values {10,20,30,40,50,60} are even, so all pass
     res = D_FILTER_WHERE(input, 6, sizeof(int), pred_is_even);
 
     result = d_assert_standalone(
-        res.count == 6,
+        res->count == 6,
         "macro_where_all_even",
         "D_FILTER_WHERE(is_even) on all-even should return 6",
         _counter) && result;
 
-    d_filter_result_free(&res);
+    d_filter_result_free(res);
+    free(res);
 
     // test 7: D_FILTER_WHERE with no matches
     // none are negative, so is_positive passes all;
@@ -213,12 +219,13 @@ d_tests_sa_filter_macros_single
                              pred_is_positive);
 
         result = d_assert_standalone(
-            res.count == 0,
+            res->count == 0,
             "macro_where_no_match",
             "D_FILTER_WHERE(is_positive) on negatives should be 0",
             _counter) && result;
 
-        d_filter_result_free(&res);
+        d_filter_result_free(res);
+    free(res);
     }
 
     // test 8: D_FILTER_CHAIN_BEGIN / ADD / END
@@ -258,10 +265,10 @@ d_tests_sa_filter_macros_single
                                    6,
                                    sizeof(int));
 
-        if ( (res.elements) &&
-             (res.count == 4) )
+        if ( (res->elements) &&
+             (res->count == 4) )
         {
-            elems  = (int*)res.elements;
+            elems  = (int*)res->elements;
             result = d_assert_standalone(
                 (elems[0] == 40) &&
                 (elems[1] == 30) &&
@@ -272,7 +279,8 @@ d_tests_sa_filter_macros_single
                 _counter) && result;
         }
 
-        d_filter_result_free(&res);
+        d_filter_result_free(res);
+    free(res);
         d_filter_chain_free(chain);
     }
 
@@ -305,7 +313,7 @@ d_tests_sa_filter_macros_fluent
 {
     bool                     result;
     struct d_filter_builder* builder;
-    struct d_filter_result   res;
+    struct d_filter_result*  res;
     int                      input[8];
     int*                     elems;
 
@@ -354,21 +362,21 @@ d_tests_sa_filter_macros_fluent
                            sizeof(int));
 
         result = d_assert_standalone(
-            res.status == D_FILTER_RESULT_SUCCESS,
+            res->status == D_FILTER_RESULT_SUCCESS,
             "macro_fluent_pipeline_status",
             "fluent pipeline should return SUCCESS",
             _counter) && result;
 
         result = d_assert_standalone(
-            res.count == 2,
+            res->count == 2,
             "macro_fluent_pipeline_count",
             "skip(2)->where(even)->take(2) should produce 2",
             _counter) && result;
 
-        if ( (res.elements) &&
-             (res.count == 2) )
+        if ( (res->elements) &&
+             (res->count == 2) )
         {
-            elems  = (int*)res.elements;
+            elems  = (int*)res->elements;
             result = d_assert_standalone(
                 (elems[0] == 4) &&
                 (elems[1] == 6),
@@ -377,7 +385,8 @@ d_tests_sa_filter_macros_fluent
                 _counter) && result;
         }
 
-        d_filter_result_free(&res);
+        d_filter_result_free(res);
+    free(res);
         d_filter_builder_free(builder);
     }
 
@@ -394,15 +403,15 @@ d_tests_sa_filter_macros_fluent
                            sizeof(int));
 
         result = d_assert_standalone(
-            res.count == 3,
+            res->count == 3,
             "macro_fluent_take_last_count",
             "D_THEN_TAKE_LAST(3) should produce 3",
             _counter) && result;
 
-        if ( (res.elements) &&
-             (res.count == 3) )
+        if ( (res->elements) &&
+             (res->count == 3) )
         {
-            elems  = (int*)res.elements;
+            elems  = (int*)res->elements;
             result = d_assert_standalone(
                 (elems[0] == 6) &&
                 (elems[1] == 7) &&
@@ -412,7 +421,8 @@ d_tests_sa_filter_macros_fluent
                 _counter) && result;
         }
 
-        d_filter_result_free(&res);
+        d_filter_result_free(res);
+    free(res);
         d_filter_builder_free(builder);
     }
 
@@ -429,15 +439,15 @@ d_tests_sa_filter_macros_fluent
                            sizeof(int));
 
         result = d_assert_standalone(
-            res.count == 5,
+            res->count == 5,
             "macro_fluent_skip_last_count",
             "D_THEN_SKIP_LAST(3) on 8 should produce 5",
             _counter) && result;
 
-        if ( (res.elements) &&
-             (res.count == 5) )
+        if ( (res->elements) &&
+             (res->count == 5) )
         {
-            elems  = (int*)res.elements;
+            elems  = (int*)res->elements;
             result = d_assert_standalone(
                 (elems[0] == 1) &&
                 (elems[4] == 5),
@@ -446,7 +456,8 @@ d_tests_sa_filter_macros_fluent
                 _counter) && result;
         }
 
-        d_filter_result_free(&res);
+        d_filter_result_free(res);
+    free(res);
         d_filter_builder_free(builder);
     }
 
@@ -464,15 +475,15 @@ d_tests_sa_filter_macros_fluent
                            sizeof(int));
 
         result = d_assert_standalone(
-            res.count == 4,
+            res->count == 4,
             "macro_fluent_where_not_count",
             "D_THEN_WHERE_NOT(is_even) on {1..8} should produce 4",
             _counter) && result;
 
-        if ( (res.elements) &&
-             (res.count == 4) )
+        if ( (res->elements) &&
+             (res->count == 4) )
         {
-            elems  = (int*)res.elements;
+            elems  = (int*)res->elements;
             result = d_assert_standalone(
                 (elems[0] == 1) &&
                 (elems[1] == 3) &&
@@ -483,7 +494,8 @@ d_tests_sa_filter_macros_fluent
                 _counter) && result;
         }
 
-        d_filter_result_free(&res);
+        d_filter_result_free(res);
+    free(res);
         d_filter_builder_free(builder);
     }
 
@@ -501,15 +513,15 @@ d_tests_sa_filter_macros_fluent
                            sizeof(int));
 
         result = d_assert_standalone(
-            res.count == 3,
+            res->count == 3,
             "macro_fluent_range_count",
             "D_THEN_RANGE(2,5) should produce 3",
             _counter) && result;
 
-        if ( (res.elements) &&
-             (res.count == 3) )
+        if ( (res->elements) &&
+             (res->count == 3) )
         {
-            elems  = (int*)res.elements;
+            elems  = (int*)res->elements;
             result = d_assert_standalone(
                 (elems[0] == 3) &&
                 (elems[1] == 4) &&
@@ -519,7 +531,8 @@ d_tests_sa_filter_macros_fluent
                 _counter) && result;
         }
 
-        d_filter_result_free(&res);
+        d_filter_result_free(res);
+    free(res);
         d_filter_builder_free(builder);
     }
 
@@ -538,15 +551,15 @@ d_tests_sa_filter_macros_fluent
                            sizeof(int));
 
         result = d_assert_standalone(
-            res.count == 4,
+            res->count == 4,
             "macro_fluent_reverse_count",
             "take(4)->reverse should produce 4",
             _counter) && result;
 
-        if ( (res.elements) &&
-             (res.count == 4) )
+        if ( (res->elements) &&
+             (res->count == 4) )
         {
-            elems  = (int*)res.elements;
+            elems  = (int*)res->elements;
             result = d_assert_standalone(
                 (elems[0] == 4) &&
                 (elems[1] == 3) &&
@@ -557,14 +570,14 @@ d_tests_sa_filter_macros_fluent
                 _counter) && result;
         }
 
-        d_filter_result_free(&res);
+        d_filter_result_free(res);
+    free(res);
         d_filter_builder_free(builder);
     }
 
     // test 8: fluent with D_THEN_DISTINCT
     {
         int dup_input[7];
-        int dup_input_0;
 
         dup_input[0] = 1;
         dup_input[1] = 2;
@@ -586,15 +599,15 @@ d_tests_sa_filter_macros_fluent
                                sizeof(int));
 
             result = d_assert_standalone(
-                res.count == 4,
+                res->count == 4,
                 "macro_fluent_distinct_count",
                 "D_THEN_DISTINCT on {1,2,2,3,3,3,4} should be 4",
                 _counter) && result;
 
-            if ( (res.elements) &&
-                 (res.count == 4) )
+            if ( (res->elements) &&
+                 (res->count == 4) )
             {
-                elems  = (int*)res.elements;
+                elems  = (int*)res->elements;
                 result = d_assert_standalone(
                     (elems[0] == 1) &&
                     (elems[1] == 2) &&
@@ -605,7 +618,8 @@ d_tests_sa_filter_macros_fluent
                     _counter) && result;
             }
 
-            d_filter_result_free(&res);
+            d_filter_result_free(res);
+    free(res);
             d_filter_builder_free(builder);
         }
     }
@@ -614,8 +628,8 @@ d_tests_sa_filter_macros_fluent
     {
         struct d_filter_builder* builder_a;
         struct d_filter_builder* builder_b;
-        struct d_filter_result   res_a;
-        struct d_filter_result   res_b;
+        struct d_filter_result*  res_a;
+        struct d_filter_result*  res_b;
 
         builder_a = D_FILTER_BEGIN();
         builder_b = D_FILTER_BEGIN();
@@ -637,39 +651,41 @@ d_tests_sa_filter_macros_fluent
                                  sizeof(int));
 
             result = d_assert_standalone(
-                res_a.count == 2,
+                res_a->count == 2,
                 "macro_fluent_coexist_a_count",
                 "pipeline A (take_first 2) should produce 2",
                 _counter) && result;
 
             result = d_assert_standalone(
-                res_b.count == 2,
+                res_b->count == 2,
                 "macro_fluent_coexist_b_count",
                 "pipeline B (take_last 2) should produce 2",
                 _counter) && result;
 
-            if ( (res_a.elements) &&
-                 (res_b.elements) &&
-                 (res_a.count == 2) &&
-                 (res_b.count == 2) )
+            if ( (res_a->elements) &&
+                 (res_b->elements) &&
+                 (res_a->count == 2) &&
+                 (res_b->count == 2) )
             {
                 result = d_assert_standalone(
-                    ((int*)res_a.elements)[0] == 1 &&
-                    ((int*)res_a.elements)[1] == 2,
+                    ((int*)res_a->elements)[0] == 1 &&
+                    ((int*)res_a->elements)[1] == 2,
                     "macro_fluent_coexist_a_values",
                     "pipeline A should return {1, 2}",
                     _counter) && result;
 
                 result = d_assert_standalone(
-                    ((int*)res_b.elements)[0] == 7 &&
-                    ((int*)res_b.elements)[1] == 8,
+                    ((int*)res_b->elements)[0] == 7 &&
+                    ((int*)res_b->elements)[1] == 8,
                     "macro_fluent_coexist_b_values",
                     "pipeline B should return {7, 8}",
                     _counter) && result;
             }
 
-            d_filter_result_free(&res_a);
-            d_filter_result_free(&res_b);
+            d_filter_result_free(res_a);
+            free(res_a);
+            d_filter_result_free(res_b);
+            free(res_b);
         }
 
         d_filter_builder_free(builder_a);

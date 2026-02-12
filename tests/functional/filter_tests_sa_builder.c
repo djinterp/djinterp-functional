@@ -37,7 +37,7 @@ static bool pred_is_positive(const void* _element, void* _context)
     return (*value > 0);
 }
 
-static bool pred_greater_than_ctx(const void* _element, void* _context)
+static bool pred_greater_than_context(const void* _element, void* _context)
 {
     const int* value;
     const int* threshold;
@@ -209,7 +209,7 @@ d_tests_sa_filter_builder_fluent
   - skip_first returns same builder pointer
   - skip_last returns same builder pointer
   - where returns same builder pointer
-  - where_ctx returns same builder pointer
+  - where_context returns same builder pointer
   - where_not returns same builder pointer
   - range returns same builder pointer
   - slice returns same builder pointer
@@ -229,12 +229,10 @@ d_tests_sa_filter_builder_fluent
     struct d_filter_builder* builder;
     struct d_filter_builder* ret;
     int                      threshold;
-    size_t                   indices[2];
+    size_t                   indices[2] = { 0, 3 };
 
     result      = true;
     threshold   = 5;
-    indices[0]  = 0;
-    indices[1]  = 3;
 
     builder = d_filter_builder_new();
 
@@ -283,14 +281,14 @@ d_tests_sa_filter_builder_fluent
         "where should return same builder",
         _counter) && result;
 
-    // test 6: where_ctx returns same builder
-    ret = d_filter_builder_where_ctx(builder,
-                                     pred_greater_than_ctx,
+    // test 6: where_context returns same builder
+    ret = d_filter_builder_where_context(builder,
+                                     pred_greater_than_context,
                                      &threshold);
     result = d_assert_standalone(
         ret == builder,
-        "builder_fluent_where_ctx",
-        "where_ctx should return same builder",
+        "builder_fluent_where_context",
+        "where_context should return same builder",
         _counter) && result;
 
     // test 7: where_not returns same builder
@@ -411,20 +409,14 @@ d_tests_sa_filter_builder_finalize
     struct d_test_counter* _counter
 )
 {
-    bool                     result;
     struct d_filter_builder* builder;
     struct d_filter_chain*   chain;
-    struct d_filter_result   res;
-    int                      input[6];
+    struct d_filter_result*  res;
+    int                      input[6] = { 1,2,3,4,5,6 };
     int*                     elems;
+    bool                     result;
 
     result   = true;
-    input[0] = 1;
-    input[1] = 2;
-    input[2] = 3;
-    input[3] = 4;
-    input[4] = 5;
-    input[5] = 6;
 
     // test 1: build returns chain with correct operations
     builder = d_filter_builder_new();
@@ -489,21 +481,21 @@ d_tests_sa_filter_builder_finalize
                                      sizeof(int));
 
         result = d_assert_standalone(
-            res.status == D_FILTER_RESULT_SUCCESS,
+            res->status == D_FILTER_RESULT_SUCCESS,
             "builder_apply_status",
             "apply should return SUCCESS",
             _counter) && result;
 
         result = d_assert_standalone(
-            res.count == 2,
+            res->count == 2,
             "builder_apply_count",
             "apply should produce 2 elements",
             _counter) && result;
 
-        if ( (res.elements) &&
-             (res.count == 2) )
+        if ( (res->elements) &&
+             (res->count == 2) )
         {
-            elems  = (int*)res.elements;
+            elems  = (int*)res->elements;
             result = d_assert_standalone(
                 (elems[0] == 2) &&
                 (elems[1] == 4),
@@ -512,7 +504,8 @@ d_tests_sa_filter_builder_finalize
                 _counter) && result;
         }
 
-        d_filter_result_free(&res);
+        d_filter_result_free(res);
+    free(res);
         d_filter_builder_free(builder);
     }
 
@@ -554,12 +547,13 @@ d_tests_sa_filter_builder_finalize
                                      sizeof(int));
 
         result = d_assert_standalone(
-            res.count == 6,
+            res->count == 6,
             "builder_apply_empty_count",
             "apply on empty builder should return all 6",
             _counter) && result;
 
-        d_filter_result_free(&res);
+        d_filter_result_free(res);
+    free(res);
         d_filter_builder_free(builder);
     }
 
@@ -578,13 +572,14 @@ d_tests_sa_filter_builder_finalize
                                  sizeof(int));
 
     result = d_assert_standalone(
-        (res.status == D_FILTER_RESULT_ERROR) ||
-        (res.status == D_FILTER_RESULT_INVALID),
+        (res->status == D_FILTER_RESULT_ERROR) ||
+        (res->status == D_FILTER_RESULT_INVALID),
         "builder_apply_null",
         "apply(NULL) should return error/invalid",
         _counter) && result;
 
-    d_filter_result_free(&res);
+    d_filter_result_free(res);
+    free(res);
 
     return result;
 }

@@ -53,10 +53,10 @@ d_tests_sa_filter_chain_create
     struct d_test_counter* _counter
 )
 {
-    bool                    result;
-    struct d_filter_chain*  chain;
-    struct d_filter_chain*  clone;
-    struct d_filter_operation op;
+    bool                       result;
+    struct d_filter_chain*     chain;
+    struct d_filter_chain*     clone;
+    struct d_filter_operation* op;
 
     result = true;
 
@@ -153,10 +153,10 @@ d_tests_sa_filter_chain_create
     if (chain)
     {
         op = d_filter_take_first(3);
-        d_filter_chain_add(chain, &op);
+        d_filter_chain_add(chain, op);
 
         op = d_filter_reverse();
-        d_filter_chain_add(chain, &op);
+        d_filter_chain_add(chain, op);
 
         clone  = d_filter_chain_clone(chain);
         result = d_assert_standalone(
@@ -233,11 +233,11 @@ d_tests_sa_filter_chain_add
     struct d_test_counter* _counter
 )
 {
-    bool                      result;
-    struct d_filter_chain*    chain;
-    struct d_filter_operation op;
-    size_t                    i;
-    bool                      add_ok;
+    bool                       result;
+    struct d_filter_chain*     chain;
+    struct d_filter_operation* op;
+    size_t                     i;
+    bool                       add_ok;
 
     result = true;
 
@@ -250,7 +250,7 @@ d_tests_sa_filter_chain_add
 
     // test 1: add first operation triggers allocation
     op     = d_filter_take_first(5);
-    add_ok = d_filter_chain_add(chain, &op);
+    add_ok = d_filter_chain_add(chain, op);
     result = d_assert_standalone(
         add_ok == true,
         "chain_add_first",
@@ -279,7 +279,7 @@ d_tests_sa_filter_chain_add
     for (i = 1; i < 10; i++)
     {
         op = d_filter_skip_first(i);
-        d_filter_chain_add(chain, &op);
+        d_filter_chain_add(chain, op);
     }
 
     result = d_assert_standalone(
@@ -298,7 +298,7 @@ d_tests_sa_filter_chain_add
 
     // test 3: NULL chain rejection
     op     = d_filter_reverse();
-    add_ok = d_filter_chain_add(NULL, &op);
+    add_ok = d_filter_chain_add(NULL, op);
     result = d_assert_standalone(
         add_ok == false,
         "chain_add_null_chain",
@@ -323,7 +323,7 @@ d_tests_sa_filter_chain_add
 /*
 d_tests_sa_filter_chain_convenience
   Tests convenience chain-add helpers: add_take_first, add_take_last,
-add_skip_first, add_skip_last, add_range, add_where, add_where_ctx.
+add_skip_first, add_skip_last, add_range, add_where, add_where_context.
   Tests the following:
   - each convenience function creates and adds the correct op type
   - NULL chain handling
@@ -397,12 +397,12 @@ d_tests_sa_filter_chain_convenience
         "add_where should succeed",
         _counter) && result;
 
-    // test 7: add_where_ctx
+    // test 7: add_where_context
     result = d_assert_standalone(
-        d_filter_chain_add_where_ctx(chain, pred_is_positive,
+        d_filter_chain_add_where_context(chain, pred_is_positive,
                                      &threshold) == true,
-        "chain_conv_where_ctx",
-        "add_where_ctx should succeed",
+        "chain_conv_where_context",
+        "add_where_context should succeed",
         _counter) && result;
 
     // verify total count
@@ -447,11 +447,11 @@ d_tests_sa_filter_chain_combine
     struct d_test_counter* _counter
 )
 {
-    bool                      result;
-    struct d_filter_chain*    chain_a;
-    struct d_filter_chain*    chain_b;
-    struct d_filter_chain*    combined;
-    struct d_filter_operation op;
+    bool                       result;
+    struct d_filter_chain*     chain_a;
+    struct d_filter_chain*     chain_b;
+    struct d_filter_chain*     combined;
+    struct d_filter_operation* op;
 
     result = true;
 
@@ -469,13 +469,13 @@ d_tests_sa_filter_chain_combine
     }
 
     op = d_filter_take_first(3);
-    d_filter_chain_add(chain_a, &op);
+    d_filter_chain_add(chain_a, op);
 
     op = d_filter_reverse();
-    d_filter_chain_add(chain_a, &op);
+    d_filter_chain_add(chain_a, op);
 
     op = d_filter_skip_first(1);
-    d_filter_chain_add(chain_b, &op);
+    d_filter_chain_add(chain_b, op);
 
     // test 1: concat creates combined chain
     combined = d_filter_chain_concat(chain_a, chain_b);
@@ -589,9 +589,9 @@ d_tests_sa_filter_chain_manipulate
     struct d_test_counter* _counter
 )
 {
-    bool                      result;
-    struct d_filter_chain*    chain;
-    struct d_filter_operation op;
+    bool                       result;
+    struct d_filter_chain*     chain;
+    struct d_filter_operation* op;
 
     result = true;
 
@@ -604,18 +604,18 @@ d_tests_sa_filter_chain_manipulate
 
     // populate with [TAKE_FIRST, REVERSE, SKIP_FIRST]
     op = d_filter_take_first(1);
-    d_filter_chain_add(chain, &op);
+    d_filter_chain_add(chain, op);
 
     op = d_filter_reverse();
-    d_filter_chain_add(chain, &op);
+    d_filter_chain_add(chain, op);
 
     op = d_filter_skip_first(1);
-    d_filter_chain_add(chain, &op);
+    d_filter_chain_add(chain, op);
 
     // test 1: insert at beginning (index 0)
     op     = d_filter_take_last(5);
     result = d_assert_standalone(
-        d_filter_chain_insert(chain, 0, &op) == true,
+        d_filter_chain_insert(chain, 0, op) == true,
         "chain_insert_begin",
         "insert at index 0 should succeed",
         _counter) && result;
@@ -641,7 +641,7 @@ d_tests_sa_filter_chain_manipulate
     // test 2: insert at end (index == count)
     op     = d_filter_init();
     result = d_assert_standalone(
-        d_filter_chain_insert(chain, chain->count, &op) == true,
+        d_filter_chain_insert(chain, chain->count, op) == true,
         "chain_insert_end",
         "insert at index==count should succeed",
         _counter) && result;
@@ -655,14 +655,14 @@ d_tests_sa_filter_chain_manipulate
     // test 3: insert out of bounds
     op     = d_filter_rest();
     result = d_assert_standalone(
-        d_filter_chain_insert(chain, 999, &op) == false,
+        d_filter_chain_insert(chain, 999, op) == false,
         "chain_insert_oob",
         "insert at out-of-bounds index should fail",
         _counter) && result;
 
     // test 4: insert NULL chain
     result = d_assert_standalone(
-        d_filter_chain_insert(NULL, 0, &op) == false,
+        d_filter_chain_insert(NULL, 0, op) == false,
         "chain_insert_null_chain",
         "insert into NULL chain should fail",
         _counter) && result;
@@ -760,9 +760,9 @@ d_tests_sa_filter_chain_properties
     struct d_test_counter* _counter
 )
 {
-    bool                      result;
-    struct d_filter_chain*    chain;
-    struct d_filter_operation op;
+    bool                       result;
+    struct d_filter_chain*     chain;
+    struct d_filter_operation* op;
 
     result = true;
 
@@ -789,10 +789,10 @@ d_tests_sa_filter_chain_properties
 
     // test 3: populated chain
     op = d_filter_take_first(1);
-    d_filter_chain_add(chain, &op);
+    d_filter_chain_add(chain, op);
 
     op = d_filter_reverse();
-    d_filter_chain_add(chain, &op);
+    d_filter_chain_add(chain, op);
 
     result = d_assert_standalone(
         d_filter_chain_length(chain) == 2,
