@@ -39,10 +39,10 @@ struct d_functional_pipeline d_functional_pipeline_begin(void* _data, size_t _co
 struct d_functional_pipeline d_functional_pipeline_begin_copy(const void* _data, size_t _count, size_t _element_size);
 
 // ii.   pipeline operations (chainable)
-struct d_functional_pipeline d_functional_pipeline_map(struct d_functional_pipeline _pipe, d_transformer _transform, void* _context);
-struct d_functional_pipeline d_functional_pipeline_filter(struct d_functional_pipeline _pipe, d_predicate _test, void* _context);
-struct d_functional_pipeline d_functional_pipeline_fold(struct d_functional_pipeline _pipe, void* _initial, size_t _accumulator_size, d_accumulator _combine, void* _context);
-struct d_functional_pipeline d_functional_pipeline_for_each(struct d_functional_pipeline _pipe, d_consumer _apply, void* _context);
+struct d_functional_pipeline d_functional_pipeline_map(struct d_functional_pipeline _pipe, fn_transformer _transform, void* _context);
+struct d_functional_pipeline d_functional_pipeline_filter(struct d_functional_pipeline _pipe, fn_predicate _test, void* _context);
+struct d_functional_pipeline d_functional_pipeline_fold(struct d_functional_pipeline _pipe, void* _initial, size_t _accumulator_size, fn_accumulator _combine, void* _context);
+struct d_functional_pipeline d_functional_pipeline_for_each(struct d_functional_pipeline _pipe, fn_consumer _apply, void* _context);
 struct d_functional_pipeline d_functional_pipeline_take(struct d_functional_pipeline _pipe, size_t _n);
 struct d_functional_pipeline d_functional_pipeline_skip(struct d_functional_pipeline _pipe, size_t _n);
 

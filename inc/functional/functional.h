@@ -1,829 +1,2315 @@
 /******************************************************************************
-* djinterp [core]                                                 functional.h
+* djinterp [functional]                                           functional.h
 *
-* Cross-platform functional programming foundation for C.
-*   This header provides function pointer types, composition utilities, and
-* core functional programming patterns adapted for C. Includes predicates,
-* transformers, consumers, producers, and higher-order operations like map,
-* filter, fold, and compose.
-*   Designed to be portable across C89, C99, and later standards with
-* appropriate feature detection.
+*   Root header for the functional programming module.
+*   Includes all functional sub-modules and provides convenience macros
+* for type-inferred operations, predicate/transformer/accumulator generation,
+* compound operations, array queries, pipeline shorthands, predicate algebra,
+* and guarded execution.
 *
-* NAMING CONVENTIONS:
-*   d_predicate         - function returning bool, taking one argument
-*   d_transformer       - function transforming input to output
-*   d_consumer          - function consuming value, returning void
-*   d_producer          - function producing value, taking no input
-*   d_comparator        - function comparing two values
-*   d_accumulator       - function combining accumulated value with element
+* TABLE OF CONTENTS
+* =================
+* i-v.      Sub-module includes
+* VI.       Type-inferred operation macros (no-context)
+* VII.      Type-inferred operation macros (with context)
+* VIII.     Predicate generator macros (compile-time threshold)
+* IX.       Predicate generator macros (context-based threshold)
+* X.        Transformer generator macros (compile-time operand)
+* XI.       Transformer generator macros (context-based operand)
+* XII.      Accumulator generator macros
+* XIII.     Inline predicate algebra
+* XIV.      Compound operation macros
+* XV.       Array query macros
+* XVI.      Pipeline shorthand macros
+* XVII.     Guarded execution macros
 *
-* USAGE PATTERNS:
-*   - Function pointers for callbacks and operations
-*   - Higher-order functions (map, filter, fold)
-*   - Function composition via macros and helpers
-*   - Predicate combinators (and, or, not)
 *
-* path:      \inc\functional.h
-* link:      TBA
-* author(s): Samuel 'teer' Neal-Blim                          date: 2025.02.06
+* path:      \inc\functional\functional.h
+* link(s):   TBA
+* author(s): Samuel 'teer' Neal-Blim                          date: 2025.02.10
 ******************************************************************************/
 
-/*
-TABLE OF CONTENTS
-=================
-I.    PLATFORM DETECTION AND CONFIGURATION
-      -------------------------------------
-      1.  Feature detection
-      2.  Inline function support
-      3.  Restrict keyword support
-      4.  Compatibility macros
+#ifndef DJINTERP_C_FUNCTIONAL_
+#define DJINTERP_C_FUNCTIONAL_ 1
 
-II.   FUNCTION POINTER TYPES
-      -----------------------
-      1.  Predicates and comparators
-      2.  Transformers and mappers
-      3.  Consumers and producers
-      4.  Accumulators and reducers
-      5.  Generic callbacks
-      6.  Contextual variants (with void* context)
-
-III.  PREDICATE COMBINATORS
-      ----------------------
-      1.  Logical operations (and, or, not)
-      2.  Predicate composition
-      3.  Contextual predicate combinators
-
-IV.   FUNCTIONAL COMPOSITION
-      ------------------------
-      1.  Function composition
-      2.  Partial application helpers
-      3.  Currying utilities
-
-V.    HIGHER-ORDER OPERATIONS
-      ------------------------
-      1.  Map operations
-      2.  Filter operations
-      3.  Fold/reduce operations
-      4.  ForEach operations
-      5.  Any/all/none operations
-
-VI.   UTILITY FUNCTIONS
-      ------------------
-      1.  Identity functions
-      2.  Constant functions
-      3.  Comparison utilities
-      4.  Boolean conversions
-
-VII.  MACRO HELPERS
-      --------------
-      1.  Inline function wrappers
-      2.  Lambda-like macro utilities
-      3.  Function composition macros
-*/
-
-#ifndef DJINTERP_FUNCTIONAL_
-#define DJINTERP_FUNCTIONAL_ 1
-
-
-#include <stddef.h>
-#include <string.h>
 #include "..\djinterp.h"
-
-
-// D_FUNCTIONAL_INLINE
-//   macro: expands to inline keyword if available, otherwise empty.
-#ifndef D_FUNCTIONAL_INLINE
-    #if defined(__cplusplus)
-        #define D_FUNCTIONAL_INLINE inline
-    #elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
-        #define D_FUNCTIONAL_INLINE inline
-    #elif defined(__GNUC__) || defined(__clang__)
-        #define D_FUNCTIONAL_INLINE __inline__
-    #elif defined(_MSC_VER)
-        #define D_FUNCTIONAL_INLINE __inline
-    #else
-        #define D_FUNCTIONAL_INLINE
-    #endif
-#endif
-
-// D_FUNCTIONAL_RESTRICT
-//   macro: expands to restrict keyword if available.
-#ifndef D_FUNCTIONAL_RESTRICT
-    #if defined(__cplusplus)
-        #define D_FUNCTIONAL_RESTRICT
-    #elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
-        #define D_FUNCTIONAL_RESTRICT restrict
-    #elif defined(__GNUC__) || defined(__clang__)
-        #define D_FUNCTIONAL_RESTRICT __restrict
-    #elif defined(_MSC_VER) && (_MSC_VER >= 1400)
-        #define D_FUNCTIONAL_RESTRICT __restrict
-    #else
-        #define D_FUNCTIONAL_RESTRICT
-    #endif
-#endif
-
-// D_FUNCTIONAL_CONST
-//   macro: marker for const correctness in function pointers.
-#define D_FUNCTIONAL_CONST const
-
-// D_FUNCTIONAL_NOEXCEPT
-//   macro: expands to noexcept if C++ or appropriate attribute.
-#ifndef D_FUNCTIONAL_NOEXCEPT
-    #if defined(__cplusplus) && (__cplusplus >= 201103L)
-        #define D_FUNCTIONAL_NOEXCEPT noexcept
-    #else
-        #define D_FUNCTIONAL_NOEXCEPT
-    #endif
-#endif
+#include ".\functional_common.h"
+#include ".\predicate.h"
+#include ".\compose.h"
+#include ".\fn_builder.h"
+#include ".\pipeline.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////
-///             II.   FUNCTION POINTER TYPES                                ///
+///        VI.   TYPE-INFERRED OPERATION MACROS (NO CONTEXT)                ///
 ///////////////////////////////////////////////////////////////////////////////
+// Wrappers that eliminate sizeof(type) and NULL context boilerplate from
+// the higher-order functions in functional_common.h.  Each macro infers
+// element size from the TYPE parameter and passes NULL as context.
+// For operations requiring a non-NULL context, use the _CONTEXT variants
+// in section VII or call the underlying function directly.
 
-// d_predicate
-//   typedef: function returning bool for a given element.
-// Used for filtering, testing, and boolean operations.
-typedef bool (*d_predicate)(const void* _element);
+// D_FUNCTIONAL_MAP
+//   macro: type-inferred map.  Applies _fn to each element of _in,
+// writing transformed results to _out.
+// Returns bool (true on success).
+#define D_FUNCTIONAL_MAP(type,                                              \
+                         in,                                                \
+                         out,                                               \
+                         count,                                             \
+                         func)                                              \
+    d_functional_map((in),                                                  \
+                     (out),                                                 \
+                     (count),                                               \
+                     sizeof(type),                                          \
+                     (fn),                                                  \
+                     NULL)
 
-// d_predicate_ctx
-//   typedef: predicate with additional context parameter.
-typedef bool (*d_predicate_ctx)(const void* _element, void* _context);
+// D_FUNCTIONAL_FOLD_LEFT
+//   macro: type-inferred left fold.  Accumulates from left to right.
+// Returns bool (true on success).
+#define D_FUNCTIONAL_FOLD_LEFT(type,                                        \
+                               in,                                          \
+                               count,                                       \
+                               acc,                                         \
+                               combine)                                     \
+    d_functional_fold_left((in),                                            \
+                           (count),                                         \
+                           sizeof(type),                                    \
+                           (acc),                                           \
+                           (combine),                                       \
+                           NULL)
 
-// d_binary_predicate
-//   typedef: function returning bool for two elements.
-// Used for comparisons, equality checks, and binary tests.
-typedef bool (*d_binary_predicate)(const void* _element1,
-                                   const void* _element2);
+// D_FUNCTIONAL_FOLD_RIGHT
+//   macro: type-inferred right fold.  Accumulates from right to left.
+// Returns bool (true on success).
+#define D_FUNCTIONAL_FOLD_RIGHT(type,                                       \
+                                in,                                         \
+                                count,                                      \
+                                acc,                                        \
+                                combine)                                    \
+    d_functional_fold_right((in),                                           \
+                            (count),                                        \
+                            sizeof(type),                                   \
+                            (acc),                                          \
+                            (combine),                                      \
+                            NULL)
 
-// d_binary_predicate_ctx
-//   typedef: binary predicate with additional context parameter.
-typedef bool (*d_binary_predicate_ctx)(const void* _element1,
-                                       const void* _element2,
-                                       void*       _context);
+// D_FUNCTIONAL_FOR_EACH
+//   macro: type-inferred mutable for-each.
+#define D_FUNCTIONAL_FOR_EACH(type,                                         \
+                              in,                                           \
+                              count,                                        \
+                              apply)                                        \
+    d_functional_for_each((in),                                             \
+                          (count),                                          \
+                          sizeof(type),                                     \
+                          (apply),                                          \
+                          NULL)
 
-// d_transformer
-//   typedef: function transforming input to output.
-// Output is written to _output parameter. Returns success status.
-typedef bool (*d_transformer)(const void* _input,
-                              void*       _output);
+// D_FUNCTIONAL_FOR_EACH_CONST
+//   macro: type-inferred immutable for-each.
+#define D_FUNCTIONAL_FOR_EACH_CONST(type,                                   \
+                                    in,                                     \
+                                    count,                                  \
+                                    apply)                                  \
+    d_functional_for_each_const((in),                                       \
+                                (count),                                    \
+                                sizeof(type),                               \
+                                (apply),                                    \
+                                NULL)
 
-// d_transformer_ctx
-//   typedef: transformer with additional context parameter.
-typedef bool (*d_transformer_ctx)(const void* _input,
-                                  void*       _output,
-                                  void*       _context);
+// D_FUNCTIONAL_ANY
+//   macro: type-inferred any.  True if at least one element matches.
+#define D_FUNCTIONAL_ANY(type,                                              \
+                         in,                                                \
+                         count,                                             \
+                         test)                                              \
+    d_functional_any((in),                                                  \
+                     (count),                                               \
+                     sizeof(type),                                          \
+                     (test),                                                \
+                     NULL)
 
-// d_consumer
-//   typedef: function consuming a value without producing output.
-// Used for side-effects like printing, logging, or updating state.
-typedef void (*d_consumer)(void* _element);
+// D_FUNCTIONAL_ALL
+//   macro: type-inferred all.  True if every element matches.
+#define D_FUNCTIONAL_ALL(type,                                              \
+                         in,                                                \
+                         count,                                             \
+                         test)                                              \
+    d_functional_all((in),                                                  \
+                     (count),                                               \
+                     sizeof(type),                                          \
+                     (test),                                                \
+                     NULL)
 
-// d_consumer_const
-//   typedef: consumer that doesn't modify the element.
-typedef void (*d_consumer_const)(const void* _element);
+// D_FUNCTIONAL_NONE
+//   macro: type-inferred none.  True if no element matches.
+#define D_FUNCTIONAL_NONE(type,                                             \
+                          in,                                               \
+                          count,                                            \
+                          test)                                             \
+    d_functional_none((in),                                                 \
+                      (count),                                              \
+                      sizeof(type),                                         \
+                      (test),                                               \
+                      NULL)
 
-// d_consumer_ctx
-//   typedef: consumer with additional context parameter.
-typedef void (*d_consumer_ctx)(void* _element, void* _context);
+// D_FUNCTIONAL_COUNT_IF
+//   macro: type-inferred count_if.  Returns number of matches.
+#define D_FUNCTIONAL_COUNT_IF(type,                                         \
+                   in,                                                      \
+                   count,                                                   \
+                   test)                                                    \
+    d_functional_count_if((in),                                             \
+                          (count),                                          \
+                          sizeof(type),                                     \
+                          (test),                                           \
+                          NULL)
 
-// d_producer
-//   typedef: function producing a value with no input.
-// Output is written to _output parameter. Returns success status.
-typedef bool (*d_producer)(void* _output);
-
-// d_producer_ctx
-//   typedef: producer with additional context parameter.
-typedef bool (*d_producer_ctx)(void* _output, void* _context);
-
-// d_comparator
-//   typedef: three-way comparison returning negative/zero/positive.
-// Returns <0 if _element1 < _element2, 0 if equal, >0 if greater.
-typedef int (*d_comparator)(const void* _element1,
-                            const void* _element2);
-
-// d_comparator_ctx
-//   typedef: comparator with additional context parameter.
-typedef int (*d_comparator_ctx)(const void* _element1,
-                                const void* _element2,
-                                void*       _context);
-
-// d_accumulator
-//   typedef: function combining accumulated value with new element.
-// Used in fold/reduce operations. Output is written to _accumulated.
-// Returns success status.
-typedef bool (*d_accumulator)(void*       _accumulated,
-                              const void* _element);
-
-// d_accumulator_ctx
-//   typedef: accumulator with additional context parameter.
-typedef bool (*d_accumulator_ctx)(void*       _accumulated,
-                                  const void* _element,
-                                  void*       _context);
-
-// d_reducer
-//   typedef: function combining two elements into one.
-// Used for reduction operations. Output is written to _result.
-typedef bool (*d_reducer)(const void* _element1,
-                          const void* _element2,
-                          void*       _result);
-
-// d_reducer_ctx
-//   typedef: reducer with additional context parameter.
-typedef bool (*d_reducer_ctx)(const void* _element1,
-                              const void* _element2,
-                              void*       _result,
-                              void*       _context);
-
-// d_mapper
-//   typedef: alias for d_transformer (common terminology).
-typedef d_transformer d_mapper;
-
-// d_mapper_ctx
-//   typedef: mapper with context.
-typedef d_transformer_ctx d_mapper_ctx;
-
-// d_unary_op
-//   typedef: operation taking one input and producing one output.
-typedef bool (*d_unary_op)(const void* _input, void* _output);
-
-// d_binary_op
-//   typedef: operation taking two inputs and producing one output.
-typedef bool (*d_binary_op)(const void* _input1,
-                            const void* _input2,
-                            void*       _output);
-
-// d_callback
-//   typedef: generic callback with no parameters.
-typedef void (*d_callback)(void);
-
-// d_callback_ctx
-//   typedef: generic callback with context parameter.
-typedef void (*d_callback_ctx)(void* _context);
-
-// d_hasher
-//   typedef: function computing hash value for an element.
-typedef size_t (*d_hasher)(const void* _element);
-
-// d_hasher_ctx
-//   typedef: hasher with additional context parameter.
-typedef size_t (*d_hasher_ctx)(const void* _element, void* _context);
-
-// d_cloner
-//   typedef: function creating a deep copy of an element.
-// Output is written to _output. Returns success status.
-typedef bool (*d_cloner)(const void* _source, void* _destination);
-
-// d_cloner_ctx
-//   typedef: cloner with additional context parameter.
-typedef bool (*d_cloner_ctx)(const void* _source,
-                             void*       _destination,
-                             void*       _context);
+// D_FUNCTIONAL_FIND_IF
+//   macro: type-inferred find_if.  Returns void* to first match
+// or NULL.
+#define D_FUNCTIONAL_FIND_IF(type,                                          \
+                             in,                                            \
+                             count,                                         \
+                             test)                                          \
+    d_functional_find_if((in),                                              \
+                         (count),                                           \
+                         sizeof(type),                                      \
+                         (test),                                            \
+                         NULL)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-///             III.  PREDICATE COMBINATORS                                 ///
+///        VII.  TYPE-INFERRED OPERATION MACROS (WITH CONTEXT)              ///
 ///////////////////////////////////////////////////////////////////////////////
+//
+// Identical to section VI but accept an explicit context parameter
+// that is forwarded to the callback.
+//
 
-// struct d_predicate_and
-//   struct: combines two predicates with logical AND.
-struct d_predicate_and
-{
-    d_predicate pred1;
-    d_predicate pred2;
-};
+// D_FUNCTIONAL_MAP_CONTEXT
+//   macro: type-inferred map with explicit context forwarded to
+// the transformer.
+#define D_FUNCTIONAL_MAP_CONTEXT(type,                                      \
+                                 in,                                        \
+                                 out,                                       \
+                                 count,                                     \
+                                 fn,                                        \
+                                 context)                                   \
+    d_functional_map((in),                                                  \
+                     (out),                                                 \
+                     (count),                                               \
+                     sizeof(type),                                          \
+                     (fn),                                                  \
+                     (context))
 
-// struct d_predicate_or
-//   struct: combines two predicates with logical OR.
-struct d_predicate_or
-{
-    d_predicate pred1;
-    d_predicate pred2;
-};
+// D_FUNCTIONAL_FOLD_LEFT_CONTEXT
+//   macro: type-inferred left fold with explicit context.
+#define D_FUNCTIONAL_FOLD_LEFT_CONTEXT(type,                                \
+                                       in,                                  \
+                                       count,                               \
+                                       acc,                                 \
+                                       combine,                             \
+                                       context)                             \
+    d_functional_fold_left((in),                                            \
+                           (count),                                         \
+                           sizeof(type),                                    \
+                           (acc),                                           \
+                           (combine),                                       \
+                           (context))
 
-// struct d_predicate_not
-//   struct: negates a predicate.
-struct d_predicate_not
-{
-    d_predicate pred;
-};
+// D_FUNCTIONAL_FOLD_RIGHT_CONTEXT
+//   macro: type-inferred right fold with explicit context.
+#define D_FUNCTIONAL_FOLD_RIGHT_CONTEXT(type,                               \
+                                        in,                                 \
+                                        count,                              \
+                                        acc,                                \
+                                        combine,                            \
+                                        context)                            \
+    d_functional_fold_right((in),                                           \
+                            (count),                                        \
+                            sizeof(type),                                   \
+                            (acc),                                          \
+                            (combine),                                      \
+                            (context))
 
-// struct d_predicate_and_ctx
-//   struct: combines two context predicates with logical AND.
-struct d_predicate_and_ctx
-{
-    d_predicate_ctx pred1;
-    d_predicate_ctx pred2;
-    void*           context1;
-    void*           context2;
-};
+// D_FUNCTIONAL_FOR_EACH_CONTEXT
+//   macro: type-inferred mutable for-each with explicit context.
+#define D_FUNCTIONAL_FOR_EACH_CONTEXT(type,                                 \
+                                      in,                                   \
+                                      count,                                \
+                                      apply,                                \
+                                      context)                              \
+    d_functional_for_each((in),                                             \
+                          (count),                                          \
+                          sizeof(type),                                     \
+                          (apply),                                          \
+                          (context))
 
-// struct d_predicate_or_ctx
-//   struct: combines two context predicates with logical OR.
-struct d_predicate_or_ctx
-{
-    d_predicate_ctx pred1;
-    d_predicate_ctx pred2;
-    void*           context1;
-    void*           context2;
-};
+// D_FUNCTIONAL_FOR_EACH_CONST_CONTEXT
+//   macro: type-inferred immutable for-each with explicit context.
+#define D_FUNCTIONAL_FOR_EACH_CONST_CONTEXT(type,                           \
+                                            in,                             \
+                                            count,                          \
+                                            apply,                          \
+                                            context)                        \
+    d_functional_for_each_const((in),                                       \
+                                (count),                                    \
+                                sizeof(type),                               \
+                                (apply),                                    \
+                                (context))
 
-// struct d_predicate_not_ctx
-//   struct: negates a context predicate.
-struct d_predicate_not_ctx
-{
-    d_predicate_ctx pred;
-    void*           context;
-};
+// D_FUNCTIONAL_ANY_CONTEXT
+//   macro: type-inferred any with explicit context.
+#define D_FUNCTIONAL_ANY_CONTEXT(type,                                      \
+                      in,                                                   \
+                      count,                                                \
+                      test,                                                 \
+                      context)                                              \
+    d_functional_any((in),                                                  \
+                     (count),                                               \
+                     sizeof(type),                                          \
+                     (test),                                                \
+                     (context))
 
+// D_FUNCTIONAL_ALL_CONTEXT
+//   macro: type-inferred all with explicit context.
+#define D_FUNCTIONAL_ALL_CONTEXT(type,                                      \
+                                 in,                                        \
+                                 count,                                     \
+                                 test,                                      \
+                                 context)                                   \
+    d_functional_all((in),                                                  \
+                     (count),                                               \
+                     sizeof(type),                                          \
+                     (test),                                                \
+                     (context))
 
-// I.    predicate combinator evaluation
-bool d_predicate_and_eval(const struct d_predicate_and* _combo, const void* _element);
-bool d_predicate_or_eval(const struct d_predicate_or* _combo, const void* _element);
-bool d_predicate_not_eval(const struct d_predicate_not* _combo, const void* _element);
-bool d_predicate_and_ctx_eval(const struct d_predicate_and_ctx* _combo, const void* _element);
-bool d_predicate_or_ctx_eval(const struct d_predicate_or_ctx* _combo, const void* _element);
-bool d_predicate_not_ctx_eval(const struct d_predicate_not_ctx* _combo, const void* _element);
+// D_FUNCTIONAL_NONE_CONTEXT
+//   macro: type-inferred none with explicit context.
+#define D_FUNCTIONAL_NONE_CONTEXT(type,                                     \
+                                  in,                                       \
+                                  count,                                    \
+                                  test,                                     \
+                                  context)                                  \
+    d_functional_none((in),                                                 \
+                      (count),                                              \
+                      sizeof(type),                                         \
+                      (test),                                               \
+                      (context))
 
-// II.   predicate combinator creation
-struct d_predicate_and d_predicate_and_create(d_predicate _pred1, d_predicate _pred2);
-struct d_predicate_or  d_predicate_or_create(d_predicate _pred1, d_predicate _pred2);
-struct d_predicate_not d_predicate_not_create(d_predicate _pred);
+// D_FUNCTIONAL_COUNT_IF_CONTEXT
+//   macro: type-inferred count_if with explicit context.
+#define D_FUNCTIONAL_COUNT_IF_CONTEXT(type,                                 \
+                                      in,                                   \
+                                      count,                                \
+                                      test,                                 \
+                                      context)                              \
+    d_functional_count_if((in),                                             \
+                          (count),                                          \
+                          sizeof(type),                                     \
+                          (test),                                           \
+                          (context))
 
-
-///////////////////////////////////////////////////////////////////////////////
-///             IV.   FUNCTIONAL COMPOSITION                                ///
-///////////////////////////////////////////////////////////////////////////////
-
-// struct d_composed_transformer
-//   struct: composition of two transformers (f ∘ g).
-struct d_composed_transformer
-{
-    d_transformer first;     // applied first (g)
-    d_transformer second;    // applied second (f)
-    size_t        temp_size; // size of intermediate result
-    void*         temp_buf;  // temporary buffer for intermediate result
-};
-
-// I.    transformer composition
-struct d_composed_transformer d_compose_transformers(d_transformer _first, d_transformer _second, size_t _temp_size);
-bool                         d_composed_transformer_apply(const struct d_composed_transformer* _composed, const void* _input, void* _output);
-void                         d_composed_transformer_free(struct d_composed_transformer* _composed);
-
-// struct d_partial_consumer
-//   struct: partially applied consumer with bound context.
-struct d_partial_consumer
-{
-    d_consumer_ctx fn;
-    void*          context;
-};
-
-// II.   partial application
-struct d_partial_consumer d_partial_consumer_create(d_consumer_ctx _fn, void* _context);
-void                      d_partial_consumer_apply(const struct d_partial_consumer* _partial, void* _element);
-
-
-///////////////////////////////////////////////////////////////////////////////
-///             V.    HIGHER-ORDER OPERATIONS                               ///
-///////////////////////////////////////////////////////////////////////////////
-
-// I.    map operations
-bool   d_map(const void* _input, void* _output, size_t _count, size_t _element_size, d_transformer _transform);
-bool   d_map_ctx(const void* _input, void* _output, size_t _count, size_t _element_size, d_transformer_ctx _transform, void* _context);
-
-// II.   filter operations
-size_t d_filter(const void* _input, void* _output, size_t _count, size_t _element_size, d_predicate _test);
-size_t d_filter_ctx(const void* _input, void* _output, size_t _count, size_t _element_size, d_predicate_ctx _test, void* _context);
-
-// III.  fold/reduce operations
-bool d_fold_left(const void* _input, size_t _count, size_t _element_size, void* _accumulator, d_accumulator _combine);
-bool d_fold_left_ctx(const void* _input, size_t _count, size_t _element_size, void* _accumulator, d_accumulator_ctx _combine, void* _context);
-bool d_fold_right(const void* _input, size_t _count, size_t _element_size, void* _accumulator, d_accumulator _combine);
-bool d_fold_right_ctx(const void* _input, size_t _count, size_t _element_size, void* _accumulator, d_accumulator_ctx _combine, void* _context);
-
-// IV.   for-each operations
-void d_for_each(void* _input, size_t _count, size_t _element_size, d_consumer _apply);
-void d_for_each_const(const void* _input, size_t _count, size_t _element_size, d_consumer_const _apply);
-void d_for_each_ctx(void* _input, size_t _count, size_t _element_size, d_consumer_ctx _apply, void* _context);
-
-// V.    any/all/none operations
-bool d_any(const void* _input, size_t _count, size_t _element_size, d_predicate _test);
-bool d_any_ctx(const void* _input, size_t _count, size_t _element_size, d_predicate_ctx _test, void* _context);
-bool d_all(const void* _input, size_t _count, size_t _element_size, d_predicate _test);
-bool d_all_ctx(const void* _input, size_t _count, size_t _element_size, d_predicate_ctx _test, void* _context);
-bool d_none(const void* _input, size_t _count, size_t _element_size, d_predicate _test);
-bool d_none_ctx(const void* _input, size_t _count, size_t _element_size, d_predicate_ctx _test, void* _context);
-
-// VI.   counting and searching
-size_t d_count_if(const void* _input, size_t _count, size_t _element_size, d_predicate _test);
-size_t d_count_if_ctx(const void* _input, size_t _count, size_t _element_size, d_predicate_ctx _test, void* _context);
-void*  d_find_if(const void* _input, size_t _count, size_t _element_size, d_predicate _test);
-void*  d_find_if_ctx(const void* _input, size_t _count, size_t _element_size, d_predicate_ctx _test, void* _context);
-
-
-///////////////////////////////////////////////////////////////////////////////
-///             VI.   UTILITY FUNCTIONS                                     ///
-///////////////////////////////////////////////////////////////////////////////
-
-// I.    identity functions
-bool d_identity_transformer(const void* _input, void* _output);
-bool d_identity_predicate(const void* _element);
-
-// II.   constant functions
-bool d_constant_true(const void* _element);
-bool d_constant_false(const void* _element);
-
-// III.  comparison utilities
-int  d_compare_int(const void* _a, const void* _b);
-int  d_compare_size_t(const void* _a, const void* _b);
-int  d_compare_double(const void* _a, const void* _b);
-bool d_equal_int(const void* _a, const void* _b);
-bool d_equal_size_t(const void* _a, const void* _b);
-
-// IV.   predicate utilities
-bool d_is_null(const void* _element);
-bool d_is_not_null(const void* _element);
+// D_FUNCTIONAL_FIND_IF_CONTEXT
+//   macro: type-inferred find_if with explicit context.
+#define D_FUNCTIONAL_FIND_IF_CONTEXT(type,                                  \
+                                     in,                                    \
+                                     count,                                 \
+                                     test,                                  \
+                                     context)                               \
+    d_functional_find_if((in),                                              \
+                         (count),                                           \
+                         sizeof(type),                                      \
+                         (test),                                            \
+                         (context))
 
 
 ///////////////////////////////////////////////////////////////////////////////
-///             VII.  MACRO HELPERS                                         ///
+///        VIII. PREDICATE GENERATOR MACROS (COMPILE-TIME THRESHOLD)        ///
 ///////////////////////////////////////////////////////////////////////////////
+//
+// Generate inline predicate functions from typed comparisons.
+// Each macro defines a D_INLINE fn_predicate-compatible function
+// with the threshold baked in at compile time.
+//
 
-// D_LAMBDA
-//   macro: creates a simple inline function-like expression.
-// Note: This is a limited "lambda" that works in C89+.
-#define D_LAMBDA(RETURN_TYPE, PARAM_TYPE, PARAM_NAME, BODY)  \
-    D_FUNCTIONAL_INLINE RETURN_TYPE                          \
-    D_CONCAT(d_lambda_, __LINE__)(PARAM_TYPE PARAM_NAME)    \
-    BODY
-
-// D_PREDICATE
-//   macro: creates a simple predicate function.
-#define D_PREDICATE(NAME, PARAM, CONDITION)                  \
-    D_FUNCTIONAL_INLINE bool                                 \
-    NAME(const void* PARAM)                                  \
-    {                                                        \
-        return (CONDITION);                                  \
+// D_GEN_FUNCTIONAL_PREDICATE_GT
+//   macro: generates a predicate returning true when the element
+// (interpreted as TYPE) is strictly greater than THRESHOLD.
+#define D_GEN_FUNCTIONAL_PREDICATE_GT(name,                                 \
+                                      type,                                 \
+                                      threshold)                            \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if (!_element)                                                      \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element > (threshold));                      \
     }
 
-// D_TRANSFORMER
-//   macro: creates a simple transformer function.
-#define D_TRANSFORMER(NAME, INPUT, OUTPUT, BODY)             \
-    D_FUNCTIONAL_INLINE bool                                 \
-    NAME(const void* INPUT, void* OUTPUT)                    \
-    {                                                        \
-        BODY                                                 \
-        return true;                                         \
+// D_GEN_FUNCTIONAL_PREDICATE_GE
+//   macro: generates a predicate returning true when element >=
+// THRESHOLD.
+#define D_GEN_FUNCTIONAL_PREDICATE_GE(name,                                 \
+                                      type,                                 \
+                                      threshold)                            \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( !_element )                                                    \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element >= (threshold));                     \
     }
 
-// D_CONSUMER
-//   macro: creates a simple consumer function.
-#define D_CONSUMER(NAME, PARAM, BODY)                        \
-    D_FUNCTIONAL_INLINE void                                 \
-    NAME(void* PARAM)                                        \
-    {                                                        \
-        BODY                                                 \
+// D_GEN_FUNCTIONAL_PREDICATE_LT
+//   macro: generates a predicate returning true when element <
+// THRESHOLD.
+#define D_GEN_FUNCTIONAL_PREDICATE_LT(name,                                 \
+                                      type,                                 \
+                                      threshold)                            \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if (!_element)                                                      \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element < (threshold));                      \
     }
 
-// D_COMPOSE
-//   macro: composes two function calls.
-#define D_COMPOSE(F, G, X) F(G(X))
-
-
-///////////////////////////////////////////////////////////////////////////////
-///             VIII. FUNCTION COMPOSITION AND CHAINING                     ///
-///////////////////////////////////////////////////////////////////////////////
-
-// struct d_fn_pipeline
-//   struct: holds intermediate results for function pipeline.
-struct d_fn_pipeline
-{
-    void*  data;           // current data pointer
-    size_t element_size;   // size of each element
-    size_t count;          // number of elements
-    bool   owns_data;      // whether pipeline owns the data
-    int    error_code;     // error status (0 = success)
-};
-
-// I.    pipeline creation
-struct d_fn_pipeline d_fn_pipeline_begin(void* _data, size_t _count, size_t _element_size);
-struct d_fn_pipeline d_fn_pipeline_begin_copy(const void* _data, size_t _count, size_t _element_size);
-
-// II.   pipeline operations (chainable)
-struct d_fn_pipeline d_fn_pipeline_map(struct d_fn_pipeline _pipe, d_transformer _transform);
-struct d_fn_pipeline d_fn_pipeline_filter(struct d_fn_pipeline _pipe, d_predicate _test);
-struct d_fn_pipeline d_fn_pipeline_fold(struct d_fn_pipeline _pipe, void* _initial, d_accumulator _combine);
-struct d_fn_pipeline d_fn_pipeline_for_each(struct d_fn_pipeline _pipe, d_consumer _apply);
-struct d_fn_pipeline d_fn_pipeline_take(struct d_fn_pipeline _pipe, size_t _n);
-struct d_fn_pipeline d_fn_pipeline_skip(struct d_fn_pipeline _pipe, size_t _n);
-
-// III.  pipeline finalization
-void* d_fn_pipeline_end(struct d_fn_pipeline _pipe, size_t* _out_count);
-void  d_fn_pipeline_free(struct d_fn_pipeline _pipe);
-
-// D_PIPELINE
-//   macro: starts a function pipeline.
-#define D_PIPELINE(DATA, COUNT, SIZE) \
-    d_fn_pipeline_begin((DATA), (COUNT), (SIZE))
-
-// D_PIPE
-//   macro: applies an operation in a pipeline (alias for readability).
-#define D_PIPE(PIPE, OP) OP(PIPE)
-
-
-///////////////////////////////////////////////////////////////////////////////
-///             IX.   PREDICATE COMBINATORS (INLINE)                        ///
-///////////////////////////////////////////////////////////////////////////////
-
-// struct d_pred_combo_and
-//   struct: stores two predicates for AND combination.
-struct d_pred_combo_and
-{
-    d_predicate pred1;
-    d_predicate pred2;
-};
-
-// struct d_pred_combo_or
-//   struct: stores two predicates for OR combination.
-struct d_pred_combo_or
-{
-    d_predicate pred1;
-    d_predicate pred2;
-};
-
-// struct d_pred_combo_not
-//   struct: stores predicate for NOT.
-struct d_pred_combo_not
-{
-    d_predicate pred;
-};
-
-// I.    predicate combinator evaluators
-bool d_pred_combo_and_eval(const struct d_pred_combo_and* _combo, const void* _element);
-bool d_pred_combo_or_eval(const struct d_pred_combo_or* _combo, const void* _element);
-bool d_pred_combo_not_eval(const struct d_pred_combo_not* _combo, const void* _element);
-
-// D_PRED_AND_CREATE
-//   macro: creates an AND combinator.
-#define D_PRED_AND_CREATE(P1, P2) \
-    ((struct d_pred_combo_and){(P1), (P2)})
-
-// D_PRED_OR_CREATE
-//   macro: creates an OR combinator.
-#define D_PRED_OR_CREATE(P1, P2) \
-    ((struct d_pred_combo_or){(P1), (P2)})
-
-// D_PRED_NOT_CREATE
-//   macro: creates a NOT combinator.
-#define D_PRED_NOT_CREATE(P) \
-    ((struct d_pred_combo_not){(P)})
-
-
-///////////////////////////////////////////////////////////////////////////////
-///             X.    CONVENIENCE COMPOSITION MACROS                        ///
-///////////////////////////////////////////////////////////////////////////////
-
-// D_THEN
-//   macro: chains two operations sequentially (left-to-right composition).
-// Usage: result = D_THEN(D_THEN(f1, f2), f3)(input);
-#define D_THEN(F1, F2) d_compose_##F1##_##F2
-
-// D_AND_THEN
-//   macro: alias for D_THEN for readability.
-#define D_AND_THEN(F1, F2) D_THEN(F1, F2)
-
-// D_COMPOSE_FN
-//   macro: creates a composition function from two functions.
-// This is a helper for creating named composition functions.
-#define D_COMPOSE_FN(NAME, F1, F2, TYPE)                     \
-    D_FUNCTIONAL_INLINE bool                                 \
-    NAME(const void* _input, void* _output)                  \
-    {                                                        \
-        TYPE temp;                                           \
-        if (!(F1)(_input, &temp))                            \
-        {                                                    \
-            return false;                                    \
-        }                                                    \
-        return (F2)(&temp, _output);                         \
+// D_GEN_FUNCTIONAL_PREDICATE_LE
+//   macro: generates a predicate returning true when element <=
+// THRESHOLD.
+#define D_GEN_FUNCTIONAL_PREDICATE_LE(name,                                 \
+                                      type,                                 \
+                                      threshold)                            \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( !_element )                                                    \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element <= (threshold));                     \
     }
 
-// D_MAP_THEN_FILTER
-//   macro: convenient composition of map followed by filter.
-#define D_MAP_THEN_FILTER(DATA, COUNT, SIZE, TRANSFORM, TEST) \
-    d_filter(                                                  \
-        d_map((DATA), NULL, (COUNT), (SIZE), (TRANSFORM)),     \
-        NULL,                                                  \
-        (COUNT),                                               \
-        (SIZE),                                                \
-        (TEST))
+// D_GEN_FUNCTIONAL_PREDICATE_EQ
+//   macro: generates a predicate returning true when element ==
+// VALUE.
+#define D_GEN_FUNCTIONAL_PREDICATE_EQ(name,                                 \
+                                      type,                                 \
+                                      value)                                \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( !_element )                                                    \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element == (value));                         \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_NE
+//   macro: generates a predicate returning true when element !=
+// VALUE.
+#define D_GEN_FUNCTIONAL_PREDICATE_NE(name,                                 \
+                                      type,                                 \
+                                      value)                                \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( !_element )                                                    \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element != (value));                         \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_BETWEEN
+//   macro: generates a predicate returning true when element is
+// within [LOW, HIGH] inclusive.
+#define D_GEN_FUNCTIONAL_PREDICATE_BETWEEN(name,                            \
+                                           type,                            \
+                                           low,                             \
+                                           high)                            \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+        if ( !_element )                                                    \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+        return ( (*(const type*)_element >= (low)) &&                       \
+                 (*(const type*)_element <= (high)) );                      \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_OUTSIDE
+//   macro: generates a predicate returning true when element is
+// strictly outside (LOW, HIGH).
+#define D_GEN_FUNCTIONAL_PREDICATE_OUTSIDE(name,                            \
+                                           type,                            \
+                                           low,                             \
+                                           high)                            \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( !_element )                                                    \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return ( (*(const type*)_element < (low)) ||                        \
+                 (*(const type*)_element > (high)) );                       \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_DIVISIBLE
+//   macro: generates a predicate returning true when element is
+// evenly divisible by DIVISOR.  TYPE must be an integral type.
+#define D_GEN_FUNCTIONAL_PREDICATE_DIVISIBLE(name,                          \
+                                             type,                          \
+                                             divisor)                       \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( !_element )                                                    \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return ((*(const type*)_element % (divisor)) == 0);                 \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_ODD
+//   macro: generates a predicate returning true when element is
+// odd.  TYPE must be an integral type.                                     
+#define D_GEN_FUNCTIONAL_PREDICATE_ODD(name,                                \
+                                       type)                                \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( !_element )                                                    \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return ((*(const type*)_element % 2) != 0);                         \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_POSITIVE
+//   macro: generates a predicate returning true when element > 0.
+#define D_GEN_FUNCTIONAL_PREDICATE_POSITIVE(name,                           \
+                                            type)                           \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( !_element )                                                    \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element > 0);                                \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_NEGATIVE
+//   macro: generates a predicate returning true when element < 0.
+#define D_GEN_FUNCTIONAL_PREDICATE_NEGATIVE(name,                           \
+                                            type)                           \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( !_element )                                                    \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element < 0);                                \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_ZERO
+//   macro: generates a predicate returning true when element == 0.
+#define D_GEN_FUNCTIONAL_PREDICATE_ZERO(name,                               \
+                                        type)                               \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( !_element )                                                    \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element == 0);                               \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_NONZERO
+//   macro: generates a predicate returning true when element != 0.
+#define D_GEN_FUNCTIONAL_PREDICATE_NONZERO(name,                            \
+                                           type)                            \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( !_element )                                                    \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element != 0);                               \
+    }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-///             XI.   TYPE-GENERIC HELPERS (C11+)                           ///
+///        IX.   PREDICATE GENERATOR MACROS (CONTEXT-BASED THRESHOLD)       ///
 ///////////////////////////////////////////////////////////////////////////////
+//
+// These read the comparison target from _context, allowing a
+// single predicate function to be reused with different runtime
+// threshold values.  Pass a pointer to a TYPE value as context.
+//
 
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
+// D_GEN_FUNCTIONAL_PREDICATE_GT_CONTEXT
+//   macro: generates a predicate returning true when element >
+// *(TYPE*)_context.
+#define D_GEN_FUNCTIONAL_PREDICATE_GT_CONTEXT(name,                         \
+                                              type)                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        if ( (!_element) ||                                                 \
+             (!_context) )                                                  \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element >                                    \
+                *(const type*)_context);                                    \
+    }
 
-// D_FN_CALL
-//   macro: type-generic function call wrapper.
-// Automatically handles casting for common types.
-#define D_FN_CALL(FN, ARG)                                   \
-    _Generic((ARG),                                          \
-        int*:          FN((const void*)(ARG)),               \
-        double*:       FN((const void*)(ARG)),               \
-        char*:         FN((const void*)(ARG)),               \
-        void*:         FN((const void*)(ARG)),               \
-        const int*:    FN((const void*)(ARG)),               \
-        const double*: FN((const void*)(ARG)),               \
-        const char*:   FN((const void*)(ARG)),               \
-        const void*:   FN((ARG)),                            \
-        default:       FN((const void*)(ARG)))
+// D_GEN_FUNCTIONAL_PREDICATE_GE_CONTEXT
+//   macro: generates a predicate returning true when element >=
+// *(TYPE*)_context.
+#define D_GEN_FUNCTIONAL_PREDICATE_GE_CONTEXT(name,                         \
+                                              type)                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        if ( (!_element) ||                                                 \
+             (!_context) )                                                  \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element >=                                   \
+                *(const type*)_context);                                    \
+    }
 
-#endif  // C11+
+// D_GEN_FUNCTIONAL_PREDICATE_LT_CONTEXT
+//   macro: generates a predicate returning true when element <
+// *(TYPE*)_context.
+#define D_GEN_FUNCTIONAL_PREDICATE_LT_CONTEXT(name,                         \
+                                              type)                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        if ( (!_element) ||                                                 \
+             (!_context) )                                                  \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element <                                    \
+                *(const type*)_context);                                    \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_LE_CONTEXT
+//   macro: generates a predicate returning true when element <=
+// *(TYPE*)_context.
+#define D_GEN_FUNCTIONAL_PREDICATE_LE_CONTEXT(name,                         \
+                                              type)                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        if ( (!_element) ||                                                 \
+             (!_context) )                                                  \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element <=                                   \
+                *(const type*)_context);                                    \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_EQ_CONTEXT
+//   macro: generates a predicate returning true when element ==
+// *(TYPE*)_context.
+#define D_GEN_FUNCTIONAL_PREDICATE_EQ_CONTEXT(name,                         \
+                                              type)                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        if ( (!_element) ||                                                 \
+             (!_context) )                                                  \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element ==                                   \
+                *(const type*)_context);                                    \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_NE_CONTEXT
+//   macro: generates a predicate returning true when element !=
+// *(TYPE*)_context.
+#define D_GEN_FUNCTIONAL_PREDICATE_NE_CONTEXT(name,                         \
+                                              type)                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        if ( (!_element) ||                                                 \
+             (!_context) )                                                  \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        return (*(const type*)_element !=                                   \
+                *(const type*)_context);                                    \
+    }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-///             XII.  FLUENT BUILDER PATTERN                                ///
+///        X.    TRANSFORMER GENERATOR MACROS (COMPILE-TIME OPERAND)        ///
 ///////////////////////////////////////////////////////////////////////////////
+//
+// Generate inline transformer functions for common arithmetic and
+// clamping operations on typed values.
+//
 
-// struct d_fn_builder
-//   struct: fluent builder for constructing function chains.
-struct d_fn_builder
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_ADD
+//   macro: generates a transformer that adds ADDEND to each
+// element.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_ADD(name,                             \
+                           type,                                            \
+                           addend)                                          \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = *(const type*)_input + (addend);                  \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_SUB
+//   macro: generates a transformer that subtracts SUBTRAHEND
+// from each element.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_SUB(name,                             \
+                           type,                                            \
+                           subtrahend)                                      \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = *(const type*)_input - (subtrahend);              \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_MUL
+//   macro: generates a transformer that multiplies each element
+// by FACTOR.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_MUL(name,                             \
+                           type,                                            \
+                           factor)                                          \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = *(const type*)_input * (factor);                  \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_DIV
+//   macro: generates a transformer that divides each element
+// by DIVISOR.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_DIV(name,                             \
+                           type,                                            \
+                           divisor)                                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = *(const type*)_input / (divisor);                 \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_MOD
+//   macro: generates a transformer that computes element %
+// DIVISOR.  TYPE must be an integral type.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_MOD(name,                             \
+                           type,                                            \
+                           divisor)                                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = *(const type*)_input % (divisor);                 \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_NEGATE
+//   macro: generates a transformer that negates each element.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_NEGATE(name,                          \
+                              type)                                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = -(*(const type*)_input);                          \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_ABS
+//   macro: generates a transformer that computes the absolute
+// value of each element.  TYPE must be a signed type.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_ABS(name,                             \
+                                          type)                             \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        type _val;                                                          \
+        (void)_context;                                                     \
+                                                                            \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        _val = *(const type*)_input;                                        \
+        *(type*)_output = (_val < 0) ? -_val : _val;                        \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_CLAMP
+//   macro: generates a transformer that clamps each element to
+// [LOW, HIGH].
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_CLAMP(name,                           \
+                                            type,                           \
+                                            low,                            \
+                                            high)                           \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        type _val;                                                          \
+        (void)_context;                                                     \
+                                                                            \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        _val = *(const type*)_input;                                        \
+                                                                            \
+        if ( _val < (low) )                                                 \
+        {                                                                   \
+            _val = (low);                                                   \
+        }                                                                   \
+                                                                            \
+        if ( _val > (high) )                                                \
+        {                                                                   \
+            _val = (high);                                                  \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = _val;                                             \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_CAST
+//   macro: generates a transformer that casts each element from
+// FROM_TYPE to TO_TYPE.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_CAST(name,                            \
+                                           from_type,                       \
+                                           to_type)                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(to_type*)_output = (to_type)(*(const from_type*)_input);          \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_SQUARE
+//   macro: generates a transformer that squares each element.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_SQUARE(name,                          \
+                                             type)                          \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        type _val;                                                          \
+        (void)_context;                                                     \
+                                                                            \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        _val = *(const type*)_input;                                        \
+        *(type*)_output = _val * _val;                                      \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_SHIFT_LEFT
+//   macro: generates a transformer that left-shifts each element
+// by AMOUNT bits.  TYPE must be an integral type.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_SHIFT_LEFT(name,                      \
+                                                 type,                      \
+                                                 amount)                    \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = (type)(*(const type*)_input << (amount));         \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_SHIFT_RIGHT
+//   macro: generates a transformer that right-shifts each element
+// by AMOUNT bits.  TYPE must be an integral type.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_SHIFT_RIGHT(name,                     \
+                                                  type,                     \
+                                                  amount)                   \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = (type)(*(const type*)_input >> (amount));         \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_BITWISE_AND
+//   macro: generates a transformer that ANDs each element with
+// MASK.  TYPE must be an integral type.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_BITWISE_AND(name,                     \
+                                                  type,                     \
+                                                  mask)                     \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = *(const type*)_input & (mask);                    \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_BITWISE_OR
+//   macro: generates a transformer that ORs each element with
+// MASK.  TYPE must be an integral type.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_BITWISE_OR(name,                      \
+                                                 type,                      \
+                                                 mask)                      \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = *(const type*)_input | (mask);                    \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_BITWISE_XOR
+//   macro: generates a transformer that XORs each element with
+// MASK.  TYPE must be an integral type.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_BITWISE_XOR(name,                     \
+                                                  type,                     \
+                                                  mask)                     \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = *(const type*)_input ^ (mask);                    \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_BITWISE_NOT
+//   macro: generates a transformer that flips all bits in each
+// element.  TYPE must be an integral type.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_BITWISE_NOT(name,                     \
+                                                  type)                     \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = (type)(~(*(const type*)_input));                  \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_MAP_TO
+//   macro: generates a transformer that ignores the input and
+// always writes CONSTANT to the output.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_MAP_TO(name,                          \
+                                             type,                          \
+                                             constant)                      \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        (void)_input;                                                       \
+        (void)_context;                                                     \
+                                                                            \
+        if ( !_output )                                                     \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = (constant);                                       \
+                                                                            \
+        return true;                                                        \
+    }
+
+
+///////////////////////////////////////////////////////////////////////////////
+///        XI.   TRANSFORMER GENERATOR MACROS (CONTEXT-BASED OPERAND)       ///
+///////////////////////////////////////////////////////////////////////////////
+//
+// These read the operand from _context, allowing a single
+// transformer to be reused with different runtime values.
+// Pass a pointer to a TYPE value as context.
+//
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_ADD_CONTEXT
+//   macro: generates a transformer that adds *(TYPE*)_context
+// to each element.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_ADD_CONTEXT(name,                     \
+                                                  type)                     \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        if ( (!_input)  ||                                                  \
+             (!_output) ||                                                  \
+             (!_context) )                                                  \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = *(const type*)_input + *(const type*)_context;    \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_SUB_CONTEXT
+//   macro: generates a transformer that subtracts
+// *(TYPE*)_context from each element.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_SUB_CONTEXT(name,                     \
+                                                  type)                     \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        if ( (!_input)  ||                                                  \
+             (!_output) ||                                                  \
+             (!_context) )                                                  \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = *(const type*)_input - *(const type*)_context;    \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_MUL_CONTEXT
+//   macro: generates a transformer that multiplies each element
+// by *(TYPE*)_context.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_MUL_CONTEXT(name,                     \
+                                                  type)                     \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        if ( (!_input)  ||                                                  \
+             (!_output) ||                                                  \
+             (!_context) )                                                  \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = *(const type*)_input * *(const type*)_context;    \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_DIV_CONTEXT
+//   macro: generates a transformer that divides each element
+// by *(TYPE*)_context.  Returns false on zero divisor.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_DIV_CONTEXT(name,                     \
+                                                  type)                     \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        if ( (!_input)  ||                                                  \
+             (!_output) ||                                                  \
+             (!_context) )                                                  \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = *(const type*)_input / *(const type*)_context;    \
+                                                                            \
+        return true;                                                        \
+    }
+
+
+///////////////////////////////////////////////////////////////////////////////
+///        XII.  ACCUMULATOR GENERATOR MACROS                               ///
+///////////////////////////////////////////////////////////////////////////////
+//
+// Generate inline fn_accumulator-compatible functions for common
+// reduction patterns.  Each reads both _accumulated and _element
+// as pointers to TYPE.
+//
+
+// D_DEFINE_ACC_SUM
+//   macro: generates an accumulator that computes a running sum.
+#define D_DEFINE_ACC_SUM(name,                          \
+                         type)                          \
+    D_INLINE bool                                       \
+    name                                                \
+    (                                                   \
+        void*       _accumulated,                       \
+        const void* _element,                           \
+        void*       _context                            \
+    )                                                   \
+    {                                                   \
+        (void)_context;                                 \
+        if ( (!_accumulated) || (!_element) )           \
+        {                                               \
+            return false;                               \
+        }                                               \
+        *(type*)_accumulated += *(const type*)_element; \
+        return true;                                    \
+    }
+
+// D_DEFINE_ACC_PRODUCT
+//   macro: generates an accumulator that computes a running
+// product.
+#define D_DEFINE_ACC_PRODUCT(name,                      \
+                             type)                      \
+    D_INLINE bool                                       \
+    name                                                \
+    (                                                   \
+        void*       _accumulated,                       \
+        const void* _element,                           \
+        void*       _context                            \
+    )                                                   \
+    {                                                   \
+        (void)_context;                                 \
+        if ( (!_accumulated) || (!_element) )           \
+        {                                               \
+            return false;                               \
+        }                                               \
+        *(type*)_accumulated *= *(const type*)_element; \
+        return true;                                    \
+    }
+
+// D_DEFINE_ACC_MIN
+//   macro: generates an accumulator that tracks the minimum.
+#define D_DEFINE_ACC_MIN(name,                             \
+                         type)                             \
+    D_INLINE bool                                          \
+    name                                                   \
+    (                                                      \
+        void*       _accumulated,                          \
+        const void* _element,                              \
+        void*       _context                               \
+    )                                                      \
+    {                                                      \
+        (void)_context;                                    \
+        if ( (!_accumulated) || (!_element) )              \
+        {                                                  \
+            return false;                                  \
+        }                                                  \
+        if (*(const type*)_element < *(type*)_accumulated) \
+        {                                                  \
+            *(type*)_accumulated = *(const type*)_element; \
+        }                                                  \
+        return true;                                       \
+    }
+
+// D_DEFINE_ACC_MAX
+//   macro: generates an accumulator that tracks the maximum.
+#define D_DEFINE_ACC_MAX(name,                             \
+                         type)                             \
+    D_INLINE bool                                          \
+    name                                                   \
+    (                                                      \
+        void*       _accumulated,                          \
+        const void* _element,                              \
+        void*       _context                               \
+    )                                                      \
+    {                                                      \
+        (void)_context;                                    \
+        if ( (!_accumulated) || (!_element) )              \
+        {                                                  \
+            return false;                                  \
+        }                                                  \
+        if (*(const type*)_element > *(type*)_accumulated) \
+        {                                                  \
+            *(type*)_accumulated = *(const type*)_element; \
+        }                                                  \
+        return true;                                       \
+    }
+
+// D_DEFINE_ACC_BITWISE_OR
+//   macro: generates an accumulator that computes a running
+// bitwise OR.  TYPE must be an integral type.
+#define D_DEFINE_ACC_BITWISE_OR(name,                   \
+                                type)                   \
+    D_INLINE bool                                       \
+    name                                                \
+    (                                                   \
+        void*       _accumulated,                       \
+        const void* _element,                           \
+        void*       _context                            \
+    )                                                   \
+    {                                                   \
+        (void)_context;                                 \
+        if ( (!_accumulated) || (!_element) )           \
+        {                                               \
+            return false;                               \
+        }                                               \
+        *(type*)_accumulated |= *(const type*)_element; \
+        return true;                                    \
+    }
+
+// D_DEFINE_ACC_BITWISE_AND
+//   macro: generates an accumulator that computes a running
+// bitwise AND.  TYPE must be an integral type.
+#define D_DEFINE_ACC_BITWISE_AND(name,                  \
+                                 type)                  \
+    D_INLINE bool                                       \
+    name                                                \
+    (                                                   \
+        void*       _accumulated,                       \
+        const void* _element,                           \
+        void*       _context                            \
+    )                                                   \
+    {                                                   \
+        (void)_context;                                 \
+        if ( (!_accumulated) || (!_element) )           \
+        {                                               \
+            return false;                               \
+        }                                               \
+        *(type*)_accumulated &= *(const type*)_element; \
+        return true;                                    \
+    }
+
+// D_DEFINE_ACC_COUNT
+//   macro: generates an accumulator that counts elements.
+// _accumulated is a pointer to size_t; the element value is
+// ignored.
+#define D_DEFINE_ACC_COUNT(name)    \
+    D_INLINE bool                   \
+    name                            \
+    (                               \
+        void*       _accumulated,   \
+        const void* _element,       \
+        void*       _context        \
+    )                               \
+    {                               \
+        (void)_element;             \
+        (void)_context;             \
+        if ( !_accumulated )        \
+        {                           \
+            return false;           \
+        }                           \
+        (*(size_t*)_accumulated)++; \
+        return true;                \
+    }
+
+// D_DEFINE_ACC_MEAN_STATE
+//   struct: intermediate state for computing a running mean.
+struct d_acc_mean_state
 {
-    d_transformer* transforms;      // array of transformers
-    d_predicate*   predicates;      // array of predicates
-    size_t         transform_count;
-    size_t         predicate_count;
-    size_t         capacity;
+    double sum;
+    size_t count;
 };
 
-// I.    builder creation
-struct d_fn_builder* d_fn_builder_new(void);
-
-// II.   fluent operations (return builder for chaining)
-struct d_fn_builder* d_fn_builder_map(struct d_fn_builder* _builder, d_transformer _transform);
-struct d_fn_builder* d_fn_builder_filter(struct d_fn_builder* _builder, d_predicate _test);
-struct d_fn_builder* d_fn_builder_and_then(struct d_fn_builder* _builder, d_transformer _transform);
-struct d_fn_builder* d_fn_builder_where(struct d_fn_builder* _builder, d_predicate _test);
-
-// III.  builder execution
-bool d_fn_builder_execute(const struct d_fn_builder* _builder, const void* _input, size_t _count, size_t _element_size, void* _output, size_t* _out_count);
-
-// IV.   builder cleanup
-void d_fn_builder_free(struct d_fn_builder* _builder);
-
-
-///////////////////////////////////////////////////////////////////////////////
-///             XIII. USER-DEFINED FUNCTION WRAPPERS                        ///
-///////////////////////////////////////////////////////////////////////////////
-
-// D_DEFINE_PREDICATE
-//   macro: defines a typed predicate wrapper for user types.
-// Creates both a typed version and a void* wrapper for composition.
-#define D_DEFINE_PREDICATE(NAME, TYPE)                       \
-    bool NAME##_typed(const TYPE* _element);                 \
-    D_FUNCTIONAL_INLINE bool                                 \
-    NAME(const void* _element)                               \
-    {                                                        \
-        return NAME##_typed((const TYPE*)_element);          \
-    }                                                        \
-    bool NAME##_typed(const TYPE* _element)
-
-// D_DEFINE_TRANSFORMER
-//   macro: defines a typed transformer wrapper for user types.
-#define D_DEFINE_TRANSFORMER(NAME, INPUT_TYPE, OUTPUT_TYPE)  \
-    bool NAME##_typed(const INPUT_TYPE* _input,              \
-                      OUTPUT_TYPE*       _output);           \
-    D_FUNCTIONAL_INLINE bool                                 \
-    NAME(const void* _input, void* _output)                  \
-    {                                                        \
-        return NAME##_typed((const INPUT_TYPE*)_input,       \
-                           (OUTPUT_TYPE*)_output);           \
-    }                                                        \
-    bool NAME##_typed(const INPUT_TYPE* _input,              \
-                      OUTPUT_TYPE*       _output)
-
-// D_DEFINE_CONSUMER
-//   macro: defines a typed consumer wrapper for user types.
-#define D_DEFINE_CONSUMER(NAME, TYPE)                        \
-    void NAME##_typed(TYPE* _element);                       \
-    D_FUNCTIONAL_INLINE void                                 \
-    NAME(void* _element)                                     \
-    {                                                        \
-        NAME##_typed((TYPE*)_element);                       \
-    }                                                        \
-    void NAME##_typed(TYPE* _element)
-
-// D_DEFINE_COMPARATOR
-//   macro: defines a typed comparator wrapper for user types.
-#define D_DEFINE_COMPARATOR(NAME, TYPE)                      \
-    int NAME##_typed(const TYPE* _a, const TYPE* _b);        \
-    D_FUNCTIONAL_INLINE int                                  \
-    NAME(const void* _a, const void* _b)                     \
-    {                                                        \
-        return NAME##_typed((const TYPE*)_a,                 \
-                           (const TYPE*)_b);                 \
-    }                                                        \
-    int NAME##_typed(const TYPE* _a, const TYPE* _b)
-
-// D_DEFINE_ACCUMULATOR
-//   macro: defines a typed accumulator wrapper for user types.
-#define D_DEFINE_ACCUMULATOR(NAME, ACC_TYPE, ELEM_TYPE)      \
-    bool NAME##_typed(ACC_TYPE*       _accumulated,          \
-                      const ELEM_TYPE* _element);            \
-    D_FUNCTIONAL_INLINE bool                                 \
-    NAME(void* _accumulated, const void* _element)           \
-    {                                                        \
-        return NAME##_typed((ACC_TYPE*)_accumulated,         \
-                           (const ELEM_TYPE*)_element);      \
-    }                                                        \
-    bool NAME##_typed(ACC_TYPE*       _accumulated,          \
-                      const ELEM_TYPE* _element)
-
-
-///////////////////////////////////////////////////////////////////////////////
-///             XIV.  COMPOSABLE FUNCTION TEMPLATES                         ///
-///////////////////////////////////////////////////////////////////////////////
-
-// D_MAKE_COMPOSABLE
-//   macro: wraps a user function to make it composable.
-// Usage: D_MAKE_COMPOSABLE(my_func, int) creates d_my_func wrapper.
-#define D_MAKE_COMPOSABLE(FUNC, TYPE)                        \
-    D_FUNCTIONAL_INLINE bool                                 \
-    d_##FUNC##_wrapper(const void* _input, void* _output)    \
-    {                                                        \
-        *(TYPE*)_output = FUNC(*(const TYPE*)_input);        \
-        return true;                                         \
+// D_DEFINE_ACC_MEAN
+//   macro: generates an accumulator that computes a running mean.
+// _accumulated must point to a struct d_acc_mean_state, and
+// _element must point to a TYPE value.  The mean can be read
+// from state.sum / state.count after the fold completes.
+#define D_DEFINE_ACC_MEAN(name,                       \
+                          type)                       \
+    D_INLINE bool                                     \
+    name                                              \
+    (                                                 \
+        void*       _accumulated,                     \
+        const void* _element,                         \
+        void*       _context                          \
+    )                                                 \
+    {                                                 \
+        struct d_acc_mean_state* _st;                 \
+        (void)_context;                               \
+        if ( (!_accumulated) || (!_element) )         \
+        {                                             \
+            return false;                             \
+        }                                             \
+        _st = (struct d_acc_mean_state*)_accumulated; \
+        _st->sum += (double)(*(const type*)_element); \
+        _st->count++;                                 \
+        return true;                                  \
     }
 
-// D_MAKE_PREDICATE_FROM
-//   macro: converts a boolean function to d_predicate.
-#define D_MAKE_PREDICATE_FROM(FUNC, TYPE)                    \
-    D_FUNCTIONAL_INLINE bool                                 \
-    d_##FUNC##_predicate(const void* _element)               \
-    {                                                        \
-        return FUNC(*(const TYPE*)_element);                 \
+
+///////////////////////////////////////////////////////////////////////////////
+///        XIII. INLINE PREDICATE ALGEBRA                                   ///
+///////////////////////////////////////////////////////////////////////////////
+//
+// Generate new predicates by combining or negating existing ones
+// without allocating predicate combinator structs.  For heap-
+// allocated combinators with separate contexts, use predicate.h.
+//
+
+// D_GEN_FUNCTIONAL_PREDICATE_NEGATE
+//   macro: generates a predicate that returns the logical NOT of ORIGINAL.
+// Context is forwarded to ORIGINAL.
+#define D_GEN_FUNCTIONAL_PREDICATE_NEGATE(name,                             \
+                                          original)                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        return !(original)(_element, _context);                             \
     }
 
-// D_LIFT
-//   macro: lifts a typed function into void* space for composition.
-// This is the generic version that works with any signature.
-#define D_LIFT(FUNC_NAME, WRAPPER_NAME)                      \
-    const void* WRAPPER_NAME = (const void*)FUNC_NAME
+// D_GEN_FUNCTIONAL_PREDICATE_AND
+//   macro: generates a predicate that returns (PRED1 && PRED2).
+// Both predicates receive the same element; context is forwarded to both.
+#define D_GEN_FUNCTIONAL_PREDICATE_AND(name,                                \
+                                       predicate1,                          \
+                                       predicate2)                          \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        return ( (predicate1)(_element, _context) &&                        \
+                 (predicate2)(_element, _context) );                        \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_OR
+//   macro: generates a predicate that returns (PRED1 || PRED2).
+// Both predicates receive the same element; context is forwarded to both.
+#define D_GEN_FUNCTIONAL_PREDICATE_OR(name,                                 \
+                                      predicate1,                           \
+                                      predicate2)                           \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        return ( (predicate1)(_element, _context) ||                        \
+                 (predicate2)(_element, _context) );                        \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_XOR
+//   macro: generates a predicate that returns (PRED1 ^ PRED2).
+#define D_GEN_FUNCTIONAL_PREDICATE_XOR(name,                                \
+                                       predicate1,                          \
+                                       predicate2)                          \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        bool _r1;                                                           \
+        bool _r2;                                                           \
+                                                                            \
+        _r1 = (predicate1)(_element, _context);                             \
+        _r2 = (predicate2)(_element, _context);                             \
+                                                                            \
+        return (_r1 != _r2);                                                \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_IMPLIES
+//   macro: generates a predicate for logical implication (!PRED1 || PRED2), 
+// i.e. PRED1 => PRED2.
+#define D_GEN_FUNCTIONAL_PREDICATE_IMPLIES(name,                            \
+                                           predicate1,                      \
+                                           predicate2)                      \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        return ( !(predicate1)(_element, _context) ||                       \
+                  (predicate2)(_element, _context) );                       \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_AND3
+//   macro: conjunction of three predicates.
+#define D_GEN_FUNCTIONAL_PREDICATE_AND3(name,                               \
+                                        predicate1,                         \
+                                        predicate2,                         \
+                                        predicate3)                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        return ( (predicate1)(_element, _context) &&                        \
+                 (predicate2)(_element, _context) &&                        \
+                 (predicate3)(_element, _context) );                        \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_OR3
+//   macro: disjunction of three predicates.
+#define D_GEN_FUNCTIONAL_PREDICATE_OR3(name,                                \
+                                       predicate1,                          \
+                                       predicate2,                          \
+                                       predicate3)                          \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        return ( (predicate1)(_element, _context) ||                        \
+                 (predicate2)(_element, _context) ||                        \
+                 (predicate3)(_element, _context) );                        \
+    }
+
+// D_GEN_FUNCTIONAL_PREDICATE_N_OF
+//   macro: generates a predicate that returns true when at least N of three
+// predicates are true.  Useful for majority-vote logic.
+#define D_GEN_FUNCTIONAL_PREDICATE_N_OF(name,                               \
+                                        n,                                  \
+                                        pred1,                              \
+                                        pred2,                              \
+                                        pred3)                              \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _element,                                               \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        int _hits;                                                          \
+        _hits = 0;                                                          \
+                                                                            \
+        if ( (pred1)(_element, _context) )                                  \
+        {                                                                   \
+            _hits++;                                                        \
+        }                                                                   \
+                                                                            \
+        if ( (pred2)(_element, _context) )                                  \
+        {                                                                   \
+            _hits++;                                                        \
+        }                                                                   \
+                                                                            \
+        if ( (pred3)(_element, _context) )                                  \
+        {                                                                   \
+            _hits++;                                                        \
+        }                                                                   \
+                                                                            \
+        return (_hits >= (n));                                              \
+    }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-///             XV.   EXAMPLE USAGE PATTERNS                                ///
+///        XIV.  COMPOUND OPERATION MACROS                                  ///
 ///////////////////////////////////////////////////////////////////////////////
+//
+// Common multi-step patterns composed from the higher-order
+// primitives.  Where a temporary buffer is required, the caller
+// supplies it.
+//
 
-/*
-EXAMPLE 1: Function Pipeline
------------------------------
-struct d_fn_pipeline result = 
-    D_PIPE(
-        D_PIPE(
-            D_PIPE(
-                D_PIPELINE(elements, count, sizeof(int)),
-                d_fn_pipeline_filter, is_positive),
-            d_fn_pipeline_map, double_value),
-        d_fn_pipeline_take, 10);
+// D_FUNCTIONAL_MAP_FOLD
+//   macro: map each element into _tmp, then fold _tmp into _acc.
+// _tmp must be a writable buffer of at least _count * sizeof(TYPE).
+#define D_FUNCTIONAL_MAP_FOLD(type,                                         \
+                              in,                                           \
+                              tmp,                                          \
+                              count,                                        \
+                              transform,                                    \
+                              acc,                                          \
+                              combine)                                      \
+    ( D_FUNCTIONAL_MAP(type, (in), (tmp), (count), (transform)) &&          \
+      D_FUNCTIONAL_FOLD_LEFT( type,                                         \
+                              (tmp),                                        \
+                              (count),                                      \
+                              (acc),                                        \
+                              (combine)) )                                  
+                                                                            
+// D_FUNCTIONAL_MAP_ANY                                                     
+//   macro: true if any element, after transformation to _tmp,              
+// satisfies _test.                                                         
+#define D_FUNCTIONAL_MAP_ANY(type,                                          \
+                             in,                                            \
+                             tmp,                                           \
+                             count,                                         \
+                             transform,                                     \
+                             test)                                          \
+    ( D_FUNCTIONAL_MAP(type,                                                \
+                       (in),                                                \
+                       (tmp),                                               \
+                       (count),                                             \
+                       (transform)) &&                                      \
+      D_FUNCTIONAL_ANY(type,                                                \
+                       (_tmp),                                              \
+                       (_count),                                            \
+                       (_test)) )
 
-int* final_data = d_fn_pipeline_end(result, &final_count);
+// D_FUNCTIONAL_MAP_ALL
+//   macro: true if every element, after transformation to _tmp,
+// satisfies _test.
+#define D_FUNCTIONAL_MAP_ALL(type,                                          \
+                             in,                                            \
+                             tmp,                                           \
+                             count,                                         \
+                             transform,                                     \
+                             test)                                          \
+    ( D_FUNCTIONAL_MAP(type,                                                \
+                       (in),                                                \
+                       (tmp),                                               \
+                       (count),                                             \
+                       (transform)) &&                                      \
+      D_FUNCTIONAL_ALL(type,                                                \
+                       (tmp),                                               \
+                       (count),                                             \
+                       (test)) )
+
+// D_FUNCTIONAL_MAP_NONE
+//   macro: true if no element, after transformation to _tmp,
+// satisfies _test.
+#define D_FUNCTIONAL_MAP_NONE(type,                                         \
+                              in,                                           \
+                              tmp,                                          \
+                              count,                                        \
+                              transform,                                    \
+                              test)                                         \
+    ( D_FUNCTIONAL_MAP(type,                                                \
+                       (in),                                                \
+                       (tmp),                                               \
+                       (count),                                             \
+                       (transform)) &&                                      \
+      D_FUNCTIONAL_NONE(type,                                               \
+                        (_tmp),                                             \
+                        (_count),                                           \
+                        (_test)) )
+
+// D_FUNCTIONAL_MAP_COUNT_IF
+//   macro: count how many elements satisfy _test after
+// transformation.  _tmp required.
+// Note: evaluates to bool from map; count must be read via
+// separate D_FUNCTIONAL_COUNT_IF call.  Use the pipeline API for tighter
+// integration.
+#define D_FUNCTIONAL_MAP_COUNT_IF(type,                                     \
+                                  in,                                       \
+                                  tmp,                                      \
+                                  count,                                    \
+                                  transform,                                \
+                                  test)                                     \
+    ( D_FUNCTIONAL_MAP(type,                                                \
+                       (in),                                                \
+                       (tmp),                                               \
+                       (count),                                             \
+                       (transform))                                         \
+      ? D_FUNCTIONAL_COUNT_IF(type,                                         \
+                              (tmp),                                        \
+                              (count),                                      \
+                              (test))                                       \
+      : 0 )
+
+// D_FUNCTIONAL_FOLD_BOTH
+//   macro: performs both a left fold and a right fold over the
+// same input into two separate accumulators.
+#define D_FUNCTIONAL_FOLD_BOTH(type,                                        \
+                               in,                                          \
+                               count,                                       \
+                               acc_left,                                    \
+                               combine_left,                                \
+                               acc_right,                                   \
+                               combine_right)                               \
+    ( D_FUNCTIONAL_FOLD_LEFT(type,                                          \
+                             (in),                                          \
+                             (count),                                       \
+                             (acc_left),                                    \
+                             (combine_left)) &&                             \
+      D_FUNCTIONAL_FOLD_RIGHT(type,                                         \
+                              (in),                                         \
+                              (count),                                      \
+                              (acc_right),                                  \
+                              (combine_right) )
 
 
-EXAMPLE 2: Predicate Composition
----------------------------------
-struct d_pred_combo_and combo = D_PRED_AND_CREATE(is_positive, is_even);
-filtered_count = d_filter(input, output, count, size, 
-                          (d_predicate)d_pred_combo_and_eval);
+///////////////////////////////////////////////////////////////////////////////
+///        XV.   ARRAY QUERY MACROS                                         ///
+///////////////////////////////////////////////////////////////////////////////
+// Shorthand macros for common array interrogation patterns.
+
+// D_FUNCTIONAL_CONTAINS
+//   macro: true if any element satisfies _test.  Alias for D_FUNCTIONAL_ANY
+// for readability in query context.
+#define D_FUNCTIONAL_CONTAINS(type,                                         \
+                              in,                                           \
+                              count,                                        \
+                              test)                                         \
+    D_FUNCTIONAL_ANY(type,                                                  \
+                     (in),                                                  \
+                     (count),                                               \
+                     (test))
+
+// D_FUNCTIONAL_FIRST_WHERE
+//   macro: returns a typed pointer to the first element that satisfies test,
+// or NULL.
+#define D_FUNCTIONAL_FIRST_WHERE(type,                                      \
+                                 in,                                        \
+                                 count,                                     \
+                                 test)                                      \
+    ( (type*)D_FUNCTIONAL_FIND_IF(type,                                     \
+                                  (in),                                     \
+                                  (count),                                  \
+                                  (test)) )
+
+// D_FUNCTIONAL_IS_EMPTY
+//   macro: true if no element satisfies the predicate. Equivalent to 
+// D_FUNCTIONAL_NONE; provided for readability.
+#define D_FUNCTIONAL_IS_EMPTY(type,                                         \
+                              in,                                           \
+                              count,                                        \
+                              test)                                         \
+    D_FUNCTIONAL_NONE(type,                                                 \
+                      (in),                                                 \
+                      (count),                                              \
+                      (test)) )
+
+// D_FUNCTIONAL_IS_SORTED
+//   macro: true if an array of TYPE is sorted according to a `fn_comparator`.
+// Walks adjacent pairs and short-circuits on the first inversion.
+#define D_FUNCTIONAL_IS_SORTED(type,                                        \
+                               in,                                          \
+                               count,                                       \
+                               comparator)                                  \
+    d_functional_is_sorted((in),                                            \
+                           (count),                                         \
+                           sizeof(type),                                    \
+                           (comparator))
+
+// D_FUNCTIONAL_INDEX_OF
+//   macro: returns the zero-based index of the first element satisfying test,
+// or (size_t)-1 if not found.
+#define D_FUNCTIONAL_INDEX_OF(type,                                         \
+                              in,                                           \
+                              count,                                        \
+                              test)                                         \
+    d_functional_index_of((in),                                             \
+                          (count),                                          \
+                          sizeof(type),                                     \
+                          (test))
+
+// D_FUNCTIONAL_LAST_WHERE
+//   macro: returns a typed pointer to the last element that satisfies test, or
+// NULL.  Walks the array in reverse.
+#define D_FUNCTIONAL_LAST_WHERE(type,                                       \
+                                in,                                         \
+                                count,                                      \
+                                test)                                       \
+    ( (type*)d_functional_find_last((in),                                   \
+                                    (count),                                \
+                                    sizeof(type),                           \
+                                    (test)) )
+
+// D_FUNCTIONAL_LAST_INDEX_OF
+//   macro: returns the zero-based index of the last element satisfying test,
+// or (size_t)-1 if not found.
+#define D_FUNCTIONAL_LAST_INDEX_OF(type,                                    \
+                                   in,                                      \
+                                   count,                                   \
+                                   test)                                    \
+    d_functional_last_index_of((in),                                        \
+                               (count),                                     \
+                               sizeof(type),                                \
+                               (test))
 
 
-EXAMPLE 3: Fluent Builder
---------------------------
-struct d_fn_builder* builder = d_fn_builder_new();
-d_fn_builder_filter(builder, is_valid)
-    ->d_fn_builder_map(builder, transform_to_string)
-    ->d_fn_builder_filter(builder, is_not_empty);
 
-d_fn_builder_execute(builder, input, count, size, output, &out_count);
-d_fn_builder_free(builder);
+bool   d_functional_is_sorted(const void* _input, size_t _count, size_t _element_size, fn_function_comparator _function_comparator);
+size_t d_functional_index_of(const void* _input, size_t _count, size_t _element_size, fn_predicate _test);
+void*  d_functional_find_last(const void* _input, size_t _count, size_t _element_size, fn_predicate _test);
+size_t d_functional_last_index_of(const void* _input, size_t _count, size_t _element_size, fn_predicate _test);
 
 
-EXAMPLE 4: Composed Transformer
---------------------------------
-D_COMPOSE_FN(double_then_increment, double_value, increment, int);
-d_map(input, output, count, sizeof(int), double_then_increment);
+///////////////////////////////////////////////////////////////////////////////
+///        XVI.  PIPELINE SHORTHAND MACROS                                  ///
+///////////////////////////////////////////////////////////////////////////////
+// NULL-context and typed wrappers around the pipeline API in
+// pipeline.h for concise chaining.
+//
+
+// D_FUNCTIONAL_PIPE_BEGIN
+//   macro: starts a mutable pipeline from a typed array.
+#define D_FUNCTIONAL_PIPE_BEGIN(type,                                       \
+                                data,                                       \
+                                count)                                      \
+    d_functional_pipeline_begin((data),                                     \
+                                (count),                                    \
+                                sizeof(type))
+
+// D_FUNCTIONAL_PIPE_BEGIN_COPY
+//   macro: starts a pipeline from a typed array by copying data.
+#define D_FUNCTIONAL_PIPE_BEGIN_COPY(type,                                  \
+                                     data,                                  \
+                                     count)                                 \
+    d_functional_pipeline_begin_copy((data),                                \
+                                     (count),                               \
+                                     sizeof(type))
+
+// D_FUNCTIONAL_PIPE_MAP
+//   macro: pipeline map with NULL context.
+#define D_FUNCTIONAL_PIPE_MAP(pipe,                                         \
+                              fn)                                           \
+    d_functional_pipeline_map((pipe),                                       \
+                              (fn),                                         \
+                              NULL)
+
+// D_FUNCTIONAL_PIPE_MAP_CONTEXT
+//   macro: pipeline map with explicit context.
+#define D_FUNCTIONAL_PIPE_MAP_CONTEXT(pipe,                                 \
+                                      fn,                                   \
+                                      context)                              \
+    d_functional_pipeline_map((pipe),                                       \
+                              (fn),                                         \
+                              (context))
+
+// D_FUNCTIONAL_PIPE_FILTER
+//   macro: pipeline filter with NULL context.
+#define D_FUNCTIONAL_PIPE_FILTER(pipe,                                      \
+                                 fn)                                        \
+    d_functional_pipeline_filter((pipe),                                    \
+                                 (fn),                                      \
+                                 NULL)
+
+// D_FUNCTIONAL_PIPE_FILTER_CONTEXT
+//   macro: pipeline filter with explicit context.
+#define D_FUNCTIONAL_PIPE_FILTER_CONTEXT(pipe,                              \
+                                         fn,                                \
+                                         context)                           \
+    d_functional_pipeline_filter((pipe),                                    \
+                                 (fn),                                      \
+                                 (context))
+
+// D_FUNCTIONAL_PIPE_FOLD
+//   macro: pipeline fold with NULL context and typed accumulator
+// size.
+#define D_FUNCTIONAL_PIPE_FOLD(type,                                        \
+                               pipe,                                        \
+                               init,                                        \
+                               combine)                                     \
+    d_functional_pipeline_fold((pipe),                                      \
+                               (init),                                      \
+                               sizeof(type),                                \
+                               (combine),                                   \
+                               NULL)
+
+// D_FUNCTIONAL_PIPE_FOLD_CONTEXT
+//   macro: pipeline fold with explicit context.
+#define D_FUNCTIONAL_PIPE_FOLD_CONTEXT(type,                                \
+                                       pipe,                                \
+                                       init,                                \
+                                       combine,                             \
+                                       context)                             \
+    d_functional_pipeline_fold((pipe),                                      \
+                               (init),                                      \
+                               sizeof(type),                                \
+                               (combine),                                   \
+                               (context))
+
+// D_FUNCTIONAL_PIPE_FOR_EACH
+//   macro: pipeline for-each with NULL context.
+#define D_FUNCTIONAL_PIPE_FOR_EACH(pipe,                                    \
+                                   fn)                                      \
+    d_functional_pipeline_for_each((pipe),                                  \
+                                   (fn),                                    \
+                                   NULL)
+
+// D_FUNCTIONAL_PIPE_FOR_EACH_CONTEXT
+//   macro: pipeline for-each with explicit context.
+#define D_FUNCTIONAL_PIPE_FOR_EACH_CONTEXT(pipe,                            \
+                                           fn,                              \
+                                           context)                         \
+    d_functional_pipeline_for_each((pipe),                                  \
+                                   (fn),                                    \
+                                   (context))
+
+// D_FUNCTIONAL_PIPE_TAKE
+//   macro: pipeline take.
+#define D_FUNCTIONAL_PIPE_TAKE(pipe,                                        \
+                               n)                                           \
+    d_functional_pipeline_take((pipe),                                      \
+                               (n))
+
+// D_FUNCTIONAL_PIPE_SKIP
+//   macro: pipeline skip.
+#define D_FUNCTIONAL_PIPE_SKIP(pipe,                                        \
+                               n)                                           \
+    d_functional_pipeline_skip((pipe),                                      \
+                               (n))
+
+// D_FUNCTIONAL_PIPE_END
+//   macro: finalize pipeline and retrieve result.
+#define D_FUNCTIONAL_PIPE_END(pipe,                                         \
+                              out_count)                                    \
+    d_functional_pipeline_end((pipe),                                       \
+                               (out_count))
+
+// D_FUNCTIONAL_PIPE_FREE
+//   macro: free pipeline resources.
+#define D_FUNCTIONAL_PIPE_FREE(pipe)                                        \
+    d_functional_pipeline_free((pipe))
 
 
-EXAMPLE 5: Inline Predicate Composition
-----------------------------------------
-bool result = d_pred_combo_and_eval(
-    &D_PRED_AND_CREATE(
-        is_positive,
-        d_pred_combo_or_eval(
-            &D_PRED_OR_CREATE(is_even, is_multiple_of_five))),
-    &element);
-*/
+///////////////////////////////////////////////////////////////////////////////
+///        XVII. GUARDED EXECUTION MACROS                                   ///
+///////////////////////////////////////////////////////////////////////////////
+// Conditional application patterns that combine predicates with
+// consumers or transformers.
+//
+
+// D_GEN_FUNCTIONAL_DEFINE_CONSUMER_IF
+//   macro: generates a consumer that applies `consumer` only when
+// `predicate` returns true for the element.
+#define D_GEN_FUNCTIONAL_DEFINE_CONSUMER_IF(name,                           \
+                                            predicate,                      \
+                                            consumer)                       \
+    D_INLINE void                                                           \
+    name                                                                    \
+    (                                                                       \
+        void* _element,                                                     \
+        void* _context                                                      \
+    )                                                                       \
+    {                                                                       \
+        if ((predicate)((const void*)_element, _context))                   \
+        {                                                                   \
+            (consumer)(_element, _context);                                 \
+        }                                                                   \
+                                                                            \
+        return;                                                             \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_CONSUMER_UNLESS
+//   macro: generates a consumer that applies `consumer` only when `predicate`
+// returns false for the element.
+#define D_GEN_FUNCTIONAL_DEFINE_CONSUMER_UNLESS(name,                       \
+                                                predicate,                  \
+                                                consumer)                   \
+    D_INLINE void                                                           \
+    name                                                                    \
+    (                                                                       \
+        void* _element,                                                     \
+        void* _context                                                      \
+    )                                                                       \
+    {                                                                       \
+        if (!(predicate)((const void*)_element, _context))                  \
+        {                                                                   \
+            (consumer)(_element, _context);                                 \
+        }                                                                   \
+                                                                            \
+        return;                                                             \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_IF
+//   macro: generates a transformer that applies `transform` when `predicate`
+// is true, otherwise copies input to output unchanged.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_IF(name,                              \
+                                         type,                              \
+                                         predicate,                         \
+                                         transform)                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        if ((predicate)(_input, _context))                                  \
+        {                                                                   \
+            return (transform)(_input,                                      \
+                               _output,                                     \
+                               _context);                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = *(const type*)_input;                             \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_UNLESS
+//   macro: generates a transformer that applies `transform` when `predicate`
+// is false, otherwise copies input to output unchanged.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_UNLESS(name,                          \
+                                             type,                          \
+                                             predicate,                     \
+                                             transform)                     \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        if ( (!_input) ||                                                   \
+             (!_output) )                                                   \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        if (!(predicate)(_input, _context))                                 \
+        {                                                                   \
+            return (transform)(_input,                                      \
+                               _output,                                     \
+                               _context);                                   \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = *(const type*)_input;                             \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_DEFAULT
+//   macro: generates a transformer that applies `transform` and
+// writes `default_val` to output if `transform` returns false.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_DEFAULT(name,                         \
+                                              type,                         \
+                                              transform,                    \
+                                              default_val)                  \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        if (!_output )                                                      \
+        {                                                                   \
+            return false;                                                   \
+        }                                                                   \
+                                                                            \
+        if ( (_input) &&                                                    \
+             (transform)(_input,                                            \
+                         _output,                                           \
+                         _context) )                                        \
+        {                                                                   \
+            return true;                                                    \
+        }                                                                   \
+                                                                            \
+        *(type*)_output = (default_val);                                    \
+                                                                            \
+        return true;                                                        \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_CHAIN
+//   macro: generates a transformer that applies `first`, then applies 
+// `second` to the intermediate result.  Both transformers operate on `type`.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_CHAIN(name,                           \
+                                            type,                           \
+                                            first,                          \
+                                            second)                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        type _intermediate;                                                 \
+                                                                            \
+        return ( (_input)  &&                                               \
+                 (_output) &&                                               \
+                 ((first)(_input, &_intermediate, _context)) )              \
+        ? (second)(&_intermediate,                                          \
+                    _output,                                                \
+                    _context)                                               \
+        : false;                                                            \
+    }
+
+// D_GEN_FUNCTIONAL_DEFINE_XFORM_CHAIN3
+//   macro: generates a transformer that chains three transformers
+// sequentially: `first` -> `first` -> `third`.  All operate on type.
+#define D_GEN_FUNCTIONAL_DEFINE_XFORM_CHAIN3(name,                          \
+                                             type,                          \
+                                             first,                         \
+                                             second,                        \
+                                             third)                         \
+    D_INLINE bool                                                           \
+    name                                                                    \
+    (                                                                       \
+        const void* _input,                                                 \
+        void*       _output,                                                \
+        void*       _context                                                \
+    )                                                                       \
+    {                                                                       \
+        type _tmp1;                                                         \
+        type _tmp2;                                                         \
+                                                                            \
+        return ( (_input)  &&                                               \
+                 (_output) &&                                               \
+                 ( (first)(_input, &_tmp1, _context)) &&                    \
+                   (second)(&_tmp1, &_tmp2, _context)) )                    \
+        ? (third)(&_tmp2,                                                   \
+                  _output,                                                  \
+                  _context)                                                 \
+        : false;                                                            \
+    }
 
 
-#endif  // DJINTERP_FUNCTIONAL_
+#endif  // DJINTERP_C_FUNCTIONAL_

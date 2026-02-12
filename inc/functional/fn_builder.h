@@ -28,8 +28,8 @@
 //   struct: fluent builder for constructing function chains.
 struct d_fn_builder
 {
-    d_transformer* transforms;      // array of transformers
-    d_predicate*   predicates;      // array of predicates
+    fn_transformer* transforms;      // array of transformers
+    fn_predicate*   predicates;      // array of predicates
     size_t         transform_count;
     size_t         predicate_count;
     size_t         capacity;
@@ -39,10 +39,10 @@ struct d_fn_builder
 struct d_fn_builder* d_fn_builder_new(void);
 
 // ii.   fluent operations (return builder for chaining)
-struct d_fn_builder* d_funtional_builder_map(struct d_fn_builder* _builder, d_transformer _transform);
-struct d_fn_builder* d_funtional_builder_filter(struct d_fn_builder* _builder, d_predicate _test);
-struct d_fn_builder* d_funtional_builder_and_then(struct d_fn_builder* _builder, d_transformer _transform);
-struct d_fn_builder* d_funtional_builder_where(struct d_fn_builder* _builder, d_predicate _test);
+struct d_fn_builder* d_funtional_builder_map(struct d_fn_builder* _builder, fn_transformer _transform);
+struct d_fn_builder* d_funtional_builder_filter(struct d_fn_builder* _builder, fn_predicate _test);
+struct d_fn_builder* d_funtional_builder_and_then(struct d_fn_builder* _builder, fn_transformer _transform);
+struct d_fn_builder* d_funtional_builder_where(struct d_fn_builder* _builder, fn_predicate _test);
 
 // iii.  builder execution
 bool d_fn_builder_execute(const struct d_fn_builder* _builder, const void* _input, size_t _count, size_t _element_size, void* _output, size_t* _out_count);
